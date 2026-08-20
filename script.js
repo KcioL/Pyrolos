@@ -634,16 +634,35 @@ async function traceRoute() {
 
   try {
     const coords = pts.map(p => `${p.lon},${p.lat}`).join(";");
-    const res = await fetch(`${OSRM}${coords}?overview=full&geometries=geojson&steps=false`);
-    if (!res.ok) throw new Error("OSRM " + res.status);
-    const data = await res.json();
-    if (!data.routes || !data.routes.length) throw new Error("aucun itinéraire");
+    const base = `${OSRM}${coords}?overview=full&geometries=geojson&steps=false`;
+
+    // On demande d'abord un tracé SANS autoroute ni péage : c'est tout
+    // l'intérêt d'une sortie moto. Si le serveur refuse ce paramètre ou
+    // ne trouve aucun trajet dans ces conditions, on retombe sur le
+    // calcul normal plutôt que d'échouer.
+    let data = null, avoided = true;
+    try {
+      const r1 = await fetch(base + "&exclude=motorway,toll");
+      if (r1.ok) {
+        const d1 = await r1.json();
+        if (d1.routes && d1.routes.length) data = d1;
+      }
+    } catch { /* on tentera sans exclusion */ }
+
+    if (!data) {
+      avoided = false;
+      const r2 = await fetch(base);
+      if (!r2.ok) throw new Error("OSRM " + r2.status);
+      data = await r2.json();
+      if (!data.routes || !data.routes.length) throw new Error("aucun itinéraire");
+    }
 
     const r = data.routes[0];
     trip.route = {
       coords: r.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
       distance: r.distance,     // mètres
-      duration: r.duration      // secondes
+      duration: r.duration,     // secondes
+      avoided                   // autoroutes et péages évités ?
     };
 
     btn.textContent = "Calcul du dénivelé…";
@@ -771,7 +790,12 @@ function renderBuilder() {
       <div><b>${km} km</b><span>distance</span></div>
       <div><b>${h ? h + " h " : ""}${min} min</b><span>temps de route</span></div>
       ${d ? `<div><b>${d.dplus} m</b><span>dénivelé +</span></div>
-             <div><b>${d.max} m</b><span>point haut</span></div>` : ""}`;
+             <div><b>${d.max} m</b><span>point haut</span></div>` : ""}
+      <em class="${trip.route.avoided ? "pmw-ok-inline" : "pmw-warn-inline"}">
+        ${trip.route.avoided
+          ? "✓ Sans autoroute ni péage"
+          : "⚠️ Tracé standard : aucun trajet trouvé en évitant totalement autoroutes et péages"}
+      </em>`;
   } else if (!stats.querySelector(".pmw-route-error")) {
     resBox.hidden = true;
   }
@@ -1097,7 +1121,8 @@ function openInGoogleMaps() {
   const params = new URLSearchParams({
     api: "1", travelmode: "driving",
     origin: f(pts[0]),
-    destination: f(pts[pts.length - 1])
+    destination: f(pts[pts.length - 1]),
+    avoid: "tolls|highways|ferries"   // petites routes, comme sur le tracé
   });
   const mid = pts.slice(1, -1).slice(0, 9);
   if (mid.length) params.set("waypoints", mid.map(f).join("|"));

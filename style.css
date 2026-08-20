@@ -686,3 +686,8 @@ body{
   background:var(--cream); border:2px solid var(--slate-blue);
   font-size:11px; box-shadow:0 2px 5px rgba(0,0,0,.45);
 }
+
+/* confirmation "sans autoroute ni péage" dans le résumé d'itinéraire */
+.pmw-ok-inline{
+  color:var(--sage) !important; display:block; margin-top:6px; font-weight:600;
+}
