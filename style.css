@@ -1,0 +1,354 @@
+:root{
+  --night-950:#141a1e;
+  --night-900:#1a2126;
+  --night-800:#222a30;
+  --line:#333d44;
+  --sage:#83a374;
+  --terracotta:#c98a55;
+  --slate-blue:#6c92b3;
+  --cream:#f2ead9;
+  --ink:#2a251c;
+  --text-primary:#ece8dd;
+  --text-muted:#8e968f;
+  --good:#7fa96f;
+  --warn:#c98a3c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  background:var(--night-950);
+  color:var(--text-primary);
+  font-family:'Work Sans',sans-serif;
+}
+
+.pmw h1,.pmw h2,.pmw h3,.pmw .disp{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+}
+
+
+/* ---------- COVER (couverture illustrée) ---------- */
+.pmw-cover{
+  position:relative;
+  min-height:min(78vh, 640px);
+  display:flex;
+  align-items:flex-end;
+  overflow:hidden;
+  border-bottom:1px solid var(--line);
+  background:var(--night-950);
+}
+
+/* ---------- TEXTE DE COUVERTURE (nom du site + description) ---------- */
+.pmw-cover-content{
+  position:relative; z-index:3;
+  padding:0 32px 52px;
+  max-width:660px;
+}
+
+.pmw-eyebrow{
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:'Work Sans',sans-serif; font-weight:600;
+  font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--sage); margin-bottom:16px;
+  text-shadow:0 1px 8px rgba(10,14,16,.9);
+}
+.pmw-eyebrow::before{
+  content:""; width:26px; height:2px; background:var(--sage);
+  display:inline-block; flex-shrink:0;
+}
+
+.pmw-cover-title{
+  display:flex; flex-direction:column; gap:8px;
+  margin:0 0 16px;
+  font-family:'Fraunces',serif; font-weight:700;
+  font-size:clamp(44px,7vw,78px); line-height:.92;
+  color:var(--cream); letter-spacing:-0.01em;
+  text-shadow:0 3px 24px rgba(10,14,16,.85), 0 1px 3px rgba(10,14,16,.9);
+}
+.pmw-h1-sub{
+  font-family:'Work Sans',sans-serif; font-weight:600;
+  font-size:clamp(12px,1.5vw,15px); letter-spacing:.2em; text-transform:uppercase;
+  color:var(--text-muted);
+  text-shadow:0 1px 8px rgba(10,14,16,.9);
+}
+.pmw-cover-title em{ font-style:italic; color:var(--terracotta); }
+
+.pmw-cover-text{
+  max-width:520px; margin:0 0 30px;
+  font-size:16px; line-height:1.65; color:var(--text-primary);
+  text-shadow:0 1px 10px rgba(10,14,16,.9);
+}
+
+/* chiffres clés sous la description */
+.pmw-stats{ display:flex; gap:34px; flex-wrap:wrap; }
+.pmw-stat b{
+  display:block; font-family:'Fraunces',serif; font-weight:600;
+  font-size:28px; line-height:1.1; color:var(--terracotta);
+  text-shadow:0 2px 12px rgba(10,14,16,.85);
+}
+.pmw-stat span{
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--text-muted);
+  text-shadow:0 1px 8px rgba(10,14,16,.9);
+}
+
+@media (max-width:640px){
+  .pmw-cover{ min-height:520px; }
+  .pmw-cover-content{ padding:0 20px 40px; }
+  .pmw-cover-text{ font-size:14.5px; }
+  .pmw-stats{ gap:22px; }
+  .pmw-stat b{ font-size:23px; }
+}
+/* --- couverture : illustration en calques + motard animé --- */
+.pmw-cover-scene{ position:absolute; inset:0; overflow:hidden; }
+
+/* Les deux images ont EXACTEMENT le même canevas (1800x981) et le même
+   cadrage object-fit/object-position : elles se superposent donc au pixel
+   près quelle que soit la taille de la fenêtre. C'est ce qui évite de voir
+   apparaître le motard peint dans le fond. */
+.pmw-cover-bg,
+.pmw-cover-rider{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:cover;
+  object-position:center 62%;
+  display:block;
+}
+
+/* Le fond est désormais une route vide : le motard peut donc se déplacer
+   librement, sans risque de découvrir quoi que ce soit derrière lui. */
+.pmw-cover-rider{
+  animation:pmw-rider-ride 3.4s ease-in-out infinite;
+  will-change:transform;
+}
+
+/* remontée le long de la courbe (vers le haut-gauche, dans l'axe de la route)
+   puis retour, avec un léger changement d'échelle pour la profondeur */
+@keyframes pmw-rider-ride{
+  0%   { transform:translate(0,0) scale(1); }
+  50%  { transform:translate(-3.2%,-2.0%) scale(0.955) rotate(-0.8deg); }
+  100% { transform:translate(0,0) scale(1); }
+}
+
+/* traits de vitesse qui filent vers l'arrière */
+.pmw-cover-fx{
+  position:absolute; inset:0; width:100%; height:100%;
+  pointer-events:none;
+}
+@keyframes pmw-streak{
+  0%   { transform:translateX(120px); opacity:0; }
+  25%  { opacity:1; }
+  100% { transform:translateX(-260px); opacity:0; }
+}
+.pmw-cover-fx path{ animation:pmw-streak 1s linear infinite; }
+.pmw-cover-fx path:nth-child(1){ animation-delay:0s; }
+.pmw-cover-fx path:nth-child(2){ animation-delay:.22s; }
+.pmw-cover-fx path:nth-child(3){ animation-delay:.46s; }
+.pmw-cover-fx path:nth-child(4){ animation-delay:.68s; }
+
+/* dégradé qui assombrit le bas/gauche pour que le texte reste lisible */
+.pmw-cover-veil{
+  position:absolute; inset:0; z-index:2;
+  background:
+    linear-gradient(100deg, rgba(13,18,21,.95) 0%, rgba(13,18,21,.80) 26%, rgba(13,18,21,.42) 48%, rgba(13,18,21,.05) 72%, rgba(13,18,21,0) 100%),
+    linear-gradient(0deg, rgba(13,18,21,.92) 0%, rgba(13,18,21,.35) 32%, rgba(13,18,21,0) 62%);
+  pointer-events:none;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .pmw-cover-rider, .pmw-cover-fx path{ animation:none; }
+}
+
+/* ---------- ONGLETS (Carte / Classement / Succès) ---------- */
+.pmw-tabs{
+  display:flex; gap:8px; flex-wrap:wrap;
+  padding:0 32px; background:var(--night-900);
+  border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:6;
+}
+.pmw-tab{
+  position:relative;
+  font-family:'Work Sans'; font-weight:600; font-size:13.5px; letter-spacing:.03em;
+  padding:16px 20px 14px;
+  border:0; background:transparent; color:var(--text-muted);
+  cursor:pointer; transition:color .16s;
+}
+.pmw-tab::after{
+  content:""; position:absolute; left:20px; right:20px; bottom:-1px; height:2px;
+  background:var(--sage); border-radius:2px;
+  transform:scaleX(0); transform-origin:center; transition:transform .18s ease;
+}
+.pmw-tab:hover{ color:var(--text-primary); }
+.pmw-tab:hover::after{ transform:scaleX(.5); }
+.pmw-tab.active{ color:var(--sage); }
+.pmw-tab.active::after{ transform:scaleX(1); }
+.pmw-tab:focus-visible{ outline:2px solid var(--slate-blue); outline-offset:-4px; border-radius:4px; }
+
+.pmw-view[hidden]{ display:none; }
+
+/* en-tête de section (Classement / Succès) */
+.pmw-section-head{ padding:28px 32px 6px; display:flex; flex-direction:column; gap:12px; }
+.pmw-section-head h2{ font-family:'Fraunces',serif; font-size:24px; font-weight:600; color:var(--text-primary); margin:0; }
+.pmw-section-sub{ color:var(--text-muted); font-size:13.5px; margin:0; max-width:560px; line-height:1.55; }
+.pmw-sort{ display:flex; gap:8px; flex-wrap:wrap; }
+
+/* ---------- CONTROLS ---------- */
+.pmw-controls{
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  padding:18px 32px; background:var(--night-900); border-bottom:1px solid var(--line);
+}
+.pmw-chips{ display:flex; gap:10px; flex-wrap:wrap; }
+.pmw-search{
+  flex:1; min-width:180px; background:var(--night-950); border:1px solid var(--line);
+  border-radius:7px; padding:10px 14px; color:var(--text-primary); font-family:'Work Sans'; font-size:14px;
+}
+.pmw-search::placeholder{ color:var(--text-muted); }
+.pmw-search:focus{ outline:none; border-color:var(--sage); }
+.pmw-chip{
+  font-family:'Work Sans'; font-weight:600; font-size:12.5px; letter-spacing:.03em; text-transform:uppercase;
+  padding:9px 14px; border-radius:20px; border:1px solid var(--line); background:transparent;
+  color:var(--text-muted); cursor:pointer; transition:.15s;
+}
+.pmw-chip:hover{ border-color:var(--sage); color:var(--text-primary); }
+.pmw-chip.active{ background:var(--sage); border-color:var(--sage); color:#16210f; }
+
+/* ---------- MAIN LAYOUT ---------- */
+.pmw-main{ display:grid; grid-template-columns:1fr; gap:0; }
+@media(min-width:900px){ .pmw-main{ grid-template-columns:1.05fr 1fr; } }
+
+.pmw-map-wrap{ position:relative; min-height:460px; background:var(--night-900); }
+#pmw-map{ position:absolute; inset:0; filter:sepia(.25) saturate(.75) brightness(.82); }
+.pmw-map-legend{
+  position:absolute; bottom:14px; left:14px; z-index:400;
+  background:rgba(20,26,30,.9); border:1px solid var(--line); border-radius:8px;
+  padding:10px 12px; font-size:11.5px; color:var(--text-muted); backdrop-filter:blur(4px);
+}
+.pmw-map-legend div{ display:flex; align-items:center; gap:7px; margin-top:4px; }
+.pmw-map-legend div:first-child{ margin-top:0; font-family:'Work Sans'; font-weight:600; color:var(--text-primary); font-size:11px; letter-spacing:.06em; text-transform:uppercase; }
+.pmw-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+
+.pmw-list{
+  max-height:680px; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px;
+  background:var(--night-950);
+}
+.pmw-list::-webkit-scrollbar{ width:8px; }
+.pmw-list::-webkit-scrollbar-thumb{ background:var(--line); border-radius:8px; }
+.pmw-empty{ color:var(--text-muted); font-size:13px; padding:20px; text-align:center; }
+
+/* ---------- SIGNPOST CARD (élément signature : poteau indicateur de randonnée) ---------- */
+.pmw-card{
+  display:flex; gap:0; background:var(--night-900); border:1px solid var(--line);
+  border-radius:10px; overflow:hidden; cursor:pointer; transition:.18s; position:relative;
+  min-height:150px;
+}
+.pmw-card:hover, .pmw-card.selected{ border-color:var(--sage); transform:translateY(-1px); }
+.pmw-card.selected{ box-shadow:0 0 0 1px var(--sage); }
+
+.pmw-sign{
+  flex:0 0 118px; min-height:150px; background:var(--cream);
+  border-right:4px solid var(--terracotta);
+  color:var(--ink); padding:10px 8px; display:flex; flex-direction:column; justify-content:center; align-items:center;
+  text-align:center; gap:2px; overflow:hidden;
+}
+.pmw-sign .altunit{ font-family:'Work Sans'; font-weight:600; font-size:9.5px; letter-spacing:.12em; color:var(--terracotta); line-height:1; }
+.pmw-sign .alt{ font-family:'Fraunces'; font-size:24px; font-weight:600; line-height:1.05; color:var(--ink); }
+.pmw-sign .name{ font-family:'Work Sans'; font-weight:600; font-size:10.5px; text-transform:uppercase; line-height:1.2; color:var(--ink); opacity:.75; margin-top:2px; }
+
+.pmw-card-body{ flex:1; padding:32px 32px; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:12px; }
+.pmw-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; min-width:0; }
+.pmw-card-body h3{ font-size:17px; margin:0; color:var(--text-primary); font-weight:600; }
+.pmw-massif{ font-size:10.5px; color:var(--sage); text-transform:uppercase; letter-spacing:.06em; font-family:'Work Sans'; font-weight:600; white-space:nowrap; flex-shrink:0; }
+.pmw-desc{ font-size:12.5px; color:var(--text-muted); line-height:1.5; margin:0; }
+.pmw-tags{ display:flex; gap:6px; flex-wrap:wrap; min-width:0; }
+.pmw-tag{
+  font-size:10.5px; padding:5px 11px; border-radius:20px; background:var(--night-800); color:var(--text-muted);
+  display:flex; align-items:center; gap:4px;
+}
+.pmw-tag.state-bon{ color:var(--good); }
+.pmw-tag.state-vigilance{ color:var(--warn); }
+
+/* ---------- DETAIL PANEL ---------- */
+.pmw-detail{
+  display:none; padding:26px 32px 34px; border-top:1px solid var(--line); background:var(--night-900);
+}
+.pmw-detail.open{ display:block; }
+.pmw-detail-head{ display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; margin-bottom:18px; }
+.pmw-detail-head h2{ font-size:28px; color:var(--text-primary); margin:0 0 4px; }
+.pmw-detail-sub{ color:var(--text-muted); font-size:13px; font-family:'Work Sans'; }
+.pmw-close{
+  margin-left:auto; background:transparent; border:1px solid var(--line); color:var(--text-muted);
+  border-radius:20px; padding:8px 16px; font-family:'Work Sans'; font-weight:600; font-size:12px; letter-spacing:.03em;
+  text-transform:uppercase; cursor:pointer;
+}
+.pmw-close:hover{ border-color:var(--sage); color:var(--text-primary); }
+.pmw-detail-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:14px; margin-bottom:20px; }
+.pmw-metric{ background:var(--night-950); border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+.pmw-metric b{ display:block; font-family:'Fraunces'; font-size:20px; font-weight:600; color:var(--terracotta); }
+.pmw-metric span{ font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; font-family:'Work Sans'; }
+.pmw-detail-text{ font-size:13.5px; line-height:1.7; color:var(--text-primary); max-width:640px; }
+.pmw-detail-text p{ margin:0 0 10px; }
+.pmw-note{
+  margin-top:18px; font-size:11.5px; color:var(--text-muted); border-left:2px solid var(--sage);
+  padding-left:10px; max-width:640px;
+}
+
+.pmw-footer{ padding:16px 32px; text-align:center; font-size:11px; color:var(--text-muted); border-top:1px solid var(--line); background:var(--night-950); font-family:'Work Sans'; }
+
+/* ---------- CLASSEMENT ---------- */
+.pmw-ranking{ padding:16px 32px 40px; display:flex; flex-direction:column; gap:10px; }
+.pmw-rank-row{
+  display:flex; align-items:center; gap:16px; background:var(--night-900); border:1px solid var(--line);
+  border-radius:10px; padding:14px 20px; transition:.15s;
+}
+.pmw-rank-row:hover{ border-color:var(--sage); }
+.pmw-rank-num{ font-family:'Fraunces'; font-size:20px; color:var(--text-muted); width:28px; flex-shrink:0; }
+.pmw-rank-row:nth-child(1) .pmw-rank-num{ color:var(--terracotta); }
+.pmw-rank-row:nth-child(2) .pmw-rank-num,
+.pmw-rank-row:nth-child(3) .pmw-rank-num{ color:var(--sage); }
+.pmw-rank-name{ flex:1; min-width:0; }
+.pmw-rank-name b{ display:block; font-family:'Fraunces'; font-size:16px; color:var(--text-primary); font-weight:600; }
+.pmw-rank-name span{ font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+.pmw-rank-note{ display:flex; align-items:center; gap:5px; font-family:'Fraunces'; font-size:16px; color:var(--terracotta); font-weight:600; flex-shrink:0; }
+.pmw-rank-note span{ font-size:11px; color:var(--text-muted); font-family:'Work Sans'; }
+.pmw-rank-alt{ font-family:'Fraunces'; font-size:16px; color:var(--text-primary); font-weight:600; width:70px; text-align:right; flex-shrink:0; }
+
+/* ---------- SUCCÈS / BADGES ---------- */
+.pmw-badges{ padding:16px 32px; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+.pmw-badge{
+  background:var(--night-900); border:1px solid var(--line); border-radius:10px; padding:18px;
+  display:flex; gap:14px; align-items:flex-start; opacity:.45; transition:.2s;
+}
+.pmw-badge.unlocked{ opacity:1; border-color:var(--sage); }
+.pmw-badge-icon{
+  flex-shrink:0; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:var(--night-800); font-size:19px;
+}
+.pmw-badge.unlocked .pmw-badge-icon{ background:var(--sage); }
+.pmw-badge-text b{ display:block; font-family:'Fraunces'; font-size:15px; color:var(--text-primary); margin-bottom:3px; }
+.pmw-badge-text span{ font-size:12px; color:var(--text-muted); line-height:1.4; }
+
+.pmw-progress-wrap{ padding:6px 32px 40px; max-width:460px; }
+.pmw-progress-label{ font-size:12.5px; color:var(--text-muted); margin-bottom:8px; }
+.pmw-progress-bar{ height:8px; border-radius:6px; background:var(--night-800); overflow:hidden; }
+.pmw-progress-fill{ height:100%; background:linear-gradient(90deg,var(--sage),var(--terracotta)); border-radius:6px; transition:width .3s; width:0%; }
+
+/* ---------- MÉTÉO (widget dans la fiche détail) ---------- */
+.pmw-weather{
+  display:flex; align-items:center; gap:14px; background:var(--night-950); border:1px solid var(--line);
+  border-radius:8px; padding:14px 16px; margin-bottom:16px;
+}
+.pmw-weather-icon{ font-size:26px; }
+.pmw-weather-temp{ font-family:'Fraunces'; font-size:22px; color:var(--terracotta); font-weight:600; }
+.pmw-weather-desc{ font-size:12px; color:var(--text-muted); }
+.pmw-weather-loading{ font-size:12.5px; color:var(--text-muted); }
+
+/* ---------- CASE À COCHER "roulé" dans la fiche détail ---------- */
+.pmw-ridden-toggle{
+  display:inline-flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+  font-family:'Work Sans'; font-weight:600; font-size:12.5px; color:var(--text-muted);
+  border:1px solid var(--line); border-radius:20px; padding:8px 16px; margin-left:12px; transition:.15s;
+}
+.pmw-ridden-toggle:hover{ border-color:var(--sage); }
+.pmw-ridden-toggle.on{ background:var(--sage); border-color:var(--sage); color:#16210f; }

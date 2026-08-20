@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pyrolos — Les cols des Pyrénées à moto</title>
+<link rel="icon" type="image/png" href="pyrolos.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="pmw">
+
+  <!-- ============ COUVERTURE ============ -->
+  <!-- Place ton illustration dans le dossier du site sous le nom hero.png
+       (ou change le src ci-dessous). Format conseillé : ~1600x900. -->
+  <header class="pmw-cover">
+    <div class="pmw-cover-scene">
+      <!-- fond : l'illustration complète -->
+      <img class="pmw-cover-bg" src="hero-bg.webp" alt="">
+      <!-- motard détouré, superposé et animé -->
+      <img class="pmw-cover-rider" src="hero-rider.webp"
+           alt="Motard penché dans une épingle des Pyrénées">
+      <!-- traits de vitesse -->
+      <svg class="pmw-cover-fx" viewBox="0 0 1800 981" preserveAspectRatio="none" aria-hidden="true">
+        <g stroke="#ffffff" stroke-linecap="round" fill="none">
+          <path d="M120,470 L470,520" stroke-width="5" opacity=".30"/>
+          <path d="M60,560 L440,610" stroke-width="7" opacity=".22"/>
+          <path d="M170,400 L500,450" stroke-width="4" opacity=".24"/>
+          <path d="M30,660 L400,700" stroke-width="8" opacity=".16"/>
+        </g>
+      </svg>
+    </div>
+    <div class="pmw-cover-veil"></div>
+
+    <div class="pmw-cover-content">
+      <div class="pmw-eyebrow">Le guide des motards des Pyrénées</div>
+      <h1 class="pmw-cover-title">Pyrolos<span class="pmw-h1-sub">les cols &amp; routes <em>à moto</em></span></h1>
+      <p class="pmw-cover-text">Du Tourmalet au Port d'Envalira : virages, revêtement, ouverture saisonnière et retours de motards. Coche tes cols, débloque des succès et prépare ta prochaine sortie.</p>
+      <div class="pmw-stats">
+        <div class="pmw-stat"><b id="pmw-count">–</b><span>Cols &amp; routes</span></div>
+        <div class="pmw-stat"><b id="pmw-highest">–</b><span>Point culminant</span></div>
+        <div class="pmw-stat"><b id="pmw-massifs-count">–</b><span>Massifs couverts</span></div>
+      </div>
+    </div>
+  </header>
+
+
+
+  <!-- ============ NAVIGATION PAR ONGLETS ============ -->
+  <nav class="pmw-tabs">
+    <button class="pmw-tab active" data-view="carte">Carte</button>
+    <button class="pmw-tab" data-view="classement">Classement</button>
+    <button class="pmw-tab" data-view="succes">Succès</button>
+  </nav>
+
+  <!-- ============ VUE CARTE ============ -->
+  <section class="pmw-view" id="view-carte">
+    <div class="pmw-controls">
+      <input class="pmw-search" id="pmw-search" placeholder="Chercher un col, une route, un massif…">
+      <div class="pmw-chips" id="pmw-chips">
+        <button class="pmw-chip active" data-massif="tous">Tous les massifs</button>
+      </div>
+    </div>
+
+    <div class="pmw-main">
+      <div class="pmw-map-wrap">
+        <div id="pmw-map"></div>
+        <div class="pmw-map-legend">
+          <div>Revêtement</div>
+          <div><span class="pmw-dot" style="background:#7fa96f"></span> Bon état</div>
+          <div><span class="pmw-dot" style="background:#c98a3c"></span> Vigilance</div>
+        </div>
+      </div>
+      <div class="pmw-list" id="pmw-list"></div>
+    </div>
+
+    <div class="pmw-detail" id="pmw-detail"></div>
+  </section>
+
+  <!-- ============ VUE CLASSEMENT ============ -->
+  <section class="pmw-view" id="view-classement" hidden>
+    <div class="pmw-section-head">
+      <h2>Classement des cols</h2>
+      <div class="pmw-sort" id="pmw-sort">
+        <button class="pmw-chip active" data-sort="note">Note motards</button>
+        <button class="pmw-chip" data-sort="alt">Altitude</button>
+        <button class="pmw-chip" data-sort="nom">Alphabétique</button>
+      </div>
+    </div>
+    <div class="pmw-ranking" id="pmw-ranking"></div>
+  </section>
+
+  <!-- ============ VUE SUCCÈS ============ -->
+  <section class="pmw-view" id="view-succes" hidden>
+    <div class="pmw-section-head">
+      <h2>Succès</h2>
+      <p class="pmw-section-sub">Coche les cols que tu as roulés depuis leurs fiches pour débloquer des succès. Sauvegardé uniquement sur cet appareil.</p>
+    </div>
+    <div class="pmw-badges" id="pmw-badges"></div>
+    <div class="pmw-progress-wrap">
+      <div class="pmw-progress-label"><span id="pmw-progress-text">0 / 12 cols roulés</span></div>
+      <div class="pmw-progress-bar"><div class="pmw-progress-fill" id="pmw-progress-fill"></div></div>
+    </div>
+  </section>
+
+  <footer class="pmw-footer">Pyrolos · données d'exemple · altitudes, notes et coordonnées indicatives · vérifie toujours l'état des routes et la météo avant de partir</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
