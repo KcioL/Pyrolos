@@ -1,0 +1,52 @@
+[
+  {
+    "nom": "Aubisque & Soulor par la vallée d'Ossau",
+    "duree": "Journée",
+    "distance": "≈ 160 km",
+    "difficulte": "Modérée",
+    "depart": "Pau",
+    "desc": "Le grand classique béarnais. Montée par la vallée d'Ossau jusqu'à l'Aubisque, puis la fameuse corniche du Litor jusqu'au Soulor : quelques kilomètres taillés dans la falaise, sans doute la plus belle portion routière des Pyrénées. Descente sur Argelès-Gazost et retour par la plaine. Avant de partir, le boulevard des Pyrénées à Pau offre la vue d'ensemble sur ce qui vous attend.",
+    "cols": ["Col d'Aubisque", "Col du Soulor"],
+    "url": "https://www.google.com/maps/dir/?api=1&origin=43.2951,-0.3708&destination=43.2951,-0.3708&waypoints=42.9772,-0.3383%7C42.9975,-0.2925%7C43.0056,-0.1006&travelmode=driving"
+  },
+  {
+    "nom": "Le triptyque de Bigorre",
+    "duree": "Demi-journée à journée",
+    "distance": "≈ 125 km",
+    "difficulte": "Soutenue",
+    "depart": "Bagnères-de-Bigorre",
+    "desc": "Aspin en ouverture, tout en courbes amples sous les sapins, puis le Tourmalet et ses épingles serrées jusqu'à 2115 m. Descente sur Luz-Saint-Sauveur et retour par la vallée de Campan. Compact en kilomètres mais dense en dénivelé. Le Tourmalet est très fréquenté par les cyclistes de juin à septembre : partir tôt change tout.",
+    "cols": ["Col d'Aspin", "Col du Tourmalet"],
+    "url": "https://www.google.com/maps/dir/?api=1&origin=43.0642,0.1493&destination=43.0642,0.1493&waypoints=42.9397,0.3283%7C42.9106,0.1436%7C42.8730,-0.0043&travelmode=driving"
+  },
+  {
+    "nom": "Boucle du Luchonnais",
+    "duree": "Demi-journée",
+    "distance": "≈ 95 km",
+    "difficulte": "Technique",
+    "depart": "Bagnères-de-Luchon",
+    "desc": "Peyresourde pour se mettre en jambes, large et roulant, puis on bascule dans le confidentiel : Port de Balès sur une chaussée étroite au milieu des estives, et Col de Menté dont le versant sud enchaîne les lacets serrés. Peu de trafic, beaucoup de plaisir, mais l'attention est de mise — vaches en liberté sur Balès et revêtement irrégulier par endroits.",
+    "cols": ["Col de Peyresourde", "Port de Balès", "Col de Menté"],
+    "url": "https://www.google.com/maps/dir/?api=1&origin=42.7906,0.5934&destination=42.7906,0.5934&waypoints=42.7908,0.4433%7C42.7717,0.5386%7C42.8214,0.7756&travelmode=driving"
+  },
+  {
+    "nom": "Port de Pailhères et gorges de l'Aude",
+    "duree": "Demi-journée",
+    "distance": "≈ 105 km",
+    "difficulte": "Modérée",
+    "depart": "Ax-les-Thermes",
+    "desc": "Montée régulière vers Pailhères, 2001 m, avec un panorama qui s'ouvre largement sur les estives dans les derniers kilomètres. Descente côté Mijanès puis cap sur Quillan et les gorges de l'Aude au retour. Ambiance ariégeoise sauvage, nettement moins fréquentée que les cols de Bigorre. Vent souvent soutenu au sommet, prévoir une couche.",
+    "cols": ["Port de Pailhères"],
+    "url": "https://www.google.com/maps/dir/?api=1&origin=42.7196,1.8375&destination=42.7196,1.8375&waypoints=42.6822,1.9711%7C42.7683,2.1839&travelmode=driving"
+  },
+  {
+    "nom": "Cols basques et villages rouges",
+    "duree": "Demi-journée",
+    "distance": "≈ 85 km",
+    "difficulte": "Facile",
+    "depart": "Saint-Jean-Pied-de-Port",
+    "desc": "Changement complet de registre : altitudes modestes, collines vertes et petites routes frontalières qui serpentent sans arrêt. Le Col d'Ispéguy franchit la frontière espagnole, puis retour par Ainhoa et Espelette, villages aux façades blanc et rouge. Idéal en demi-journée ou par temps incertain, quand les hauts cols sont dans les nuages.",
+    "cols": ["Col d'Ispéguy"],
+    "url": "https://www.google.com/maps/dir/?api=1&origin=43.1631,-1.2361&destination=43.1631,-1.2361&waypoints=43.1900,-1.3392%7C43.3122,-1.4457&travelmode=driving"
+  }
+]

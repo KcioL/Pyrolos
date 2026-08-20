@@ -60,6 +60,7 @@
   <!-- ============ NAVIGATION PAR ONGLETS ============ -->
   <nav class="pmw-tabs">
     <button class="pmw-tab active" data-view="carte">Carte</button>
+    <button class="pmw-tab" data-view="itineraires">Itinéraires</button>
     <button class="pmw-tab" data-view="classement">Classement</button>
     <button class="pmw-tab" data-view="succes">Succès</button>
   </nav>
@@ -86,6 +87,95 @@
     </div>
 
     <div class="pmw-detail" id="pmw-detail"></div>
+  </section>
+
+  <!-- ============ VUE ITINÉRAIRES ============ -->
+  <section class="pmw-view" id="view-itineraires" hidden>
+
+    <div class="pmw-section-head">
+      <h2>Itinéraires prêts à rouler</h2>
+      <p class="pmw-section-sub">Des parcours sélectionnés, à ouvrir directement dans Google Maps pour la navigation.</p>
+    </div>
+    <div class="pmw-routes" id="pmw-routes"></div>
+
+    <div class="pmw-section-head">
+      <h2>Compose ton itinéraire</h2>
+      <p class="pmw-section-sub">Clique sur les cols pour les ajouter à ton parcours, réorganise-les, puis ouvre le tout dans Google&nbsp;Maps.</p>
+    </div>
+
+    <div class="pmw-builder">
+      <div class="pmw-builder-map-wrap">
+        <div id="pmw-builder-map"></div>
+        <div class="pmw-map-hint" id="pmw-map-hint" hidden></div>
+      </div>
+
+      <div class="pmw-builder-panel">
+
+        <!-- cols -->
+        <div class="pmw-bl">
+          <span class="pmw-bl-label">Cols à franchir</span>
+          <div class="pmw-chips-row" id="pmw-col-chips"></div>
+          <select class="pmw-select" id="pmw-add-col">
+            <option value="">+ Ajouter un col…</option>
+          </select>
+        </div>
+
+        <!-- départ -->
+        <div class="pmw-bl">
+          <span class="pmw-bl-label"><i class="pmw-pin d">D</i> Départ</span>
+          <div class="pmw-bl-row">
+            <span class="pmw-picked" id="pmw-start-label">Non défini</span>
+            <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" data-pick="start">📍 Choisir sur la carte</button>
+          </div>
+        </div>
+
+        <!-- type de parcours -->
+        <div class="pmw-bl">
+          <span class="pmw-bl-label"><i class="pmw-pin a">A</i> Arrivée</span>
+          <div class="pmw-modes" id="pmw-modes">
+            <button class="pmw-mode active" data-mode="boucle">↩ Boucle</button>
+            <button class="pmw-mode" data-mode="aller-retour">⇄ Aller-retour</button>
+            <button class="pmw-mode" data-mode="point">📍 Autre point</button>
+          </div>
+          <div class="pmw-bl-row" id="pmw-end-row" hidden>
+            <span class="pmw-picked" id="pmw-end-label">Non défini</span>
+            <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" data-pick="end">📍 Choisir sur la carte</button>
+          </div>
+        </div>
+
+        <!-- points de passage -->
+        <div class="pmw-bl">
+          <span class="pmw-bl-label"><i class="pmw-pin p">P</i> Points de passage</span>
+          <div class="pmw-chips-row" id="pmw-via-chips"></div>
+          <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" data-pick="via">📍 Ajouter un passage</button>
+        </div>
+
+        <p class="pmw-builder-tip">
+          <strong>Boucle :</strong> le tracé revient au départ.
+          <strong>Aller-retour :</strong> même route dans les deux sens.
+          Astuce : place le départ dans la vallée entre les cols pour éviter
+          de grimper deux fois le même versant.
+        </p>
+
+        <button class="pmw-btn pmw-btn-primary pmw-btn-full" id="pmw-trace" disabled>
+          🏍️ Tracer l'itinéraire
+        </button>
+
+        <div class="pmw-result" id="pmw-result" hidden>
+          <div class="pmw-result-stats" id="pmw-result-stats"></div>
+          <div class="pmw-result-actions">
+            <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" id="pmw-gpx">⬇ Télécharger le GPX</button>
+            <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" id="pmw-open-maps">🗺 Ouvrir dans Google Maps</button>
+            <button class="pmw-link" id="pmw-clear-route">Tout effacer</button>
+          </div>
+        </div>
+
+        <p class="pmw-builder-note">
+          Calcul d'itinéraire par OSRM, altitudes par Open-Meteo. Le tracé suit
+          les routes réelles ; vérifie tout de même l'ouverture des cols avant de partir.
+        </p>
+      </div>
+    </div>
   </section>
 
   <!-- ============ VUE CLASSEMENT ============ -->

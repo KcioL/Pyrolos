@@ -113,6 +113,7 @@ async function init() {
     return;
   }
 
+  await loadRoutes();
   buildStats();
   buildMassifChips();
   buildMap();
@@ -121,6 +122,7 @@ async function init() {
   renderBadges();
   initTabs();
   initSort();
+  initBuilder();
 }
 
 /* ---------- Stats & filtres (vue Carte) ---------- */
@@ -405,12 +407,420 @@ function renderBadges() {
   progressFillEl.style.width = `${COLS.length ? (ridden.size / COLS.length) * 100 : 0}%`;
 }
 
+/* =========================================================================
+   ITINÉRAIRES
+   ========================================================================= */
+
+let ROUTES = [];          // itinéraires pré-créés (itineraires.json)
+let builderMap = null;    // carte du créateur de parcours
+let builderMarkers = {};
+let routeLine = null;
+let selection = [];       // noms des cols choisis, dans l'ordre
+
+/* ---------- Itinéraires pré-créés ---------- */
+
+async function loadRoutes() {
+  try {
+    const res = await fetch("itineraires.json");
+    if (!res.ok) throw new Error(res.status);
+    ROUTES = await res.json();
+  } catch (err) {
+    console.warn("itineraires.json introuvable :", err);
+    ROUTES = [];
+  }
+  renderRoutes();
+}
+
+function renderRoutes() {
+  const host = document.getElementById("pmw-routes");
+  if (!host) return;
+
+  if (!ROUTES.length) {
+    host.innerHTML = `<div class="pmw-empty">Aucun itinéraire pour le moment.</div>`;
+    return;
+  }
+
+  host.innerHTML = ROUTES.map(r => `
+    <a class="pmw-route" href="${r.url}" target="_blank" rel="noopener noreferrer">
+      <div class="pmw-route-head">
+        <h3>${r.nom}</h3>
+        <span class="pmw-route-diff diff-${(r.difficulte || "").toLowerCase()}">${r.difficulte || ""}</span>
+      </div>
+      <div class="pmw-route-meta">
+        ${r.distance ? `<span>📏 ${r.distance}</span>` : ""}
+        ${r.duree ? `<span>🕒 ${r.duree}</span>` : ""}
+        ${r.depart ? `<span>📍 ${r.depart}</span>` : ""}
+      </div>
+      <p class="pmw-route-desc">${r.desc || ""}</p>
+      ${(r.cols || []).length
+        ? `<div class="pmw-route-cols">${r.cols.map(c => `<span>${c}</span>`).join("")}</div>`
+        : ""}
+      <span class="pmw-route-cta">Ouvrir dans Google Maps →</span>
+    </a>
+  `).join("");
+}
+
+/* ---------- Créateur de parcours ----------
+   Itinéraire routier réel via OSRM (sans clé), profil altimétrique via
+   Open-Meteo, export GPX. Le tracé suit les vraies routes.               */
+
+const OSRM = "https://router.project-osrm.org/route/v1/driving/";
+
+const trip = {
+  start: null,          // {lat, lon, label}
+  end: null,
+  via: [],              // points de passage libres
+  cols: [],             // noms de cols, dans l'ordre
+  mode: "boucle",       // boucle | aller-retour | point
+  route: null           // résultat OSRM
+};
+
+let pickMode = null;    // "start" | "end" | "via" | null
+let startMarker = null, endMarker = null, viaMarkers = [], routeLayer = null;
+
+function initBuilder() {
+  const mapEl = document.getElementById("pmw-builder-map");
+  if (!mapEl) return;
+
+  builderMap = L.map("pmw-builder-map", { zoomControl: true, scrollWheelZoom: false })
+                .setView([42.85, 0.6], 8);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 15, attribution: "&copy; OpenStreetMap"
+  }).addTo(builderMap);
+
+  // marqueurs des cols : clic = ajouter / retirer du parcours
+  COLS.forEach(c => {
+    const m = L.circleMarker([c.lat, c.lon], {
+      radius: 9, weight: 2, color: "#14161a",
+      fillColor: STATE_COLOR[c.etat] || STATE_COLOR.bon, fillOpacity: 1
+    }).addTo(builderMap);
+    m.bindTooltip(`${c.nom} · ${c.alt} m`, { direction: "top", offset: [0, -6] });
+    m.on("click", e => {
+      if (pickMode) return;              // en mode sélection de point, on ignore
+      L.DomEvent.stopPropagation(e);
+      toggleCol(c.nom);
+    });
+    builderMarkers[c.nom] = m;
+  });
+
+  // clic sur la carte = poser le point en cours de sélection
+  builderMap.on("click", e => {
+    if (!pickMode) return;
+    const pt = { lat: +e.latlng.lat.toFixed(5), lon: +e.latlng.lng.toFixed(5) };
+    pt.label = `${pt.lat}, ${pt.lon}`;
+    if (pickMode === "start") trip.start = pt;
+    else if (pickMode === "end") trip.end = pt;
+    else if (pickMode === "via") trip.via.push(pt);
+    setPickMode(null);
+    renderBuilder();
+    reverseGeocode(pt);                  // nom lisible, en arrière-plan
+  });
+
+  // liste déroulante des cols
+  const sel = document.getElementById("pmw-add-col");
+  COLS.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c.nom;
+    o.textContent = `${c.nom} (${c.alt} m)`;
+    sel.appendChild(o);
+  });
+  sel.addEventListener("change", () => {
+    if (sel.value) { toggleCol(sel.value); sel.value = ""; }
+  });
+
+  document.querySelectorAll("[data-pick]").forEach(b =>
+    b.addEventListener("click", () => setPickMode(b.dataset.pick)));
+
+  document.querySelectorAll(".pmw-mode").forEach(b =>
+    b.addEventListener("click", () => {
+      trip.mode = b.dataset.mode;
+      document.querySelectorAll(".pmw-mode").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      document.getElementById("pmw-end-row").hidden = trip.mode !== "point";
+      trip.route = null;
+      renderBuilder();
+    }));
+
+  document.getElementById("pmw-trace").addEventListener("click", traceRoute);
+  document.getElementById("pmw-gpx").addEventListener("click", downloadGPX);
+  document.getElementById("pmw-open-maps").addEventListener("click", openInGoogleMaps);
+  document.getElementById("pmw-clear-route").addEventListener("click", () => {
+    trip.start = trip.end = trip.route = null;
+    trip.via = []; trip.cols = [];
+    renderBuilder();
+  });
+
+  renderBuilder();
+}
+
+function setPickMode(m) {
+  pickMode = m;
+  const hint = document.getElementById("pmw-map-hint");
+  const labels = {
+    start: "Clique sur la carte pour placer le départ",
+    end:   "Clique sur la carte pour placer l'arrivée",
+    via:   "Clique sur la carte pour ajouter un point de passage"
+  };
+  hint.hidden = !m;
+  if (m) hint.textContent = labels[m];
+  document.getElementById("pmw-builder-map").style.cursor = m ? "crosshair" : "";
+  document.querySelectorAll("[data-pick]").forEach(b =>
+    b.classList.toggle("picking", b.dataset.pick === m));
+}
+
+/** Nom lisible d'un point cliqué (Nominatim, sans clé). Best effort. */
+async function reverseGeocode(pt) {
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&zoom=12&lat=${pt.lat}&lon=${pt.lon}`,
+      { headers: { "Accept-Language": "fr" } });
+    if (!r.ok) return;
+    const d = await r.json();
+    const a = d.address || {};
+    const nom = a.village || a.town || a.city || a.municipality || a.county;
+    if (nom) { pt.label = nom; renderBuilder(); }
+  } catch { /* on garde les coordonnées */ }
+}
+
+function toggleCol(nom) {
+  const i = trip.cols.indexOf(nom);
+  if (i === -1) trip.cols.push(nom); else trip.cols.splice(i, 1);
+  trip.route = null;
+  renderBuilder();
+}
+
+/** Points du parcours, dans l'ordre, prêts pour OSRM. */
+function waypoints() {
+  const pts = [];
+  if (trip.start) pts.push(trip.start);
+  trip.via.forEach(v => pts.push(v));
+  trip.cols.forEach(n => {
+    const c = COLS.find(x => x.nom === n);
+    if (c) pts.push({ lat: c.lat, lon: c.lon, label: c.nom });
+  });
+
+  if (trip.mode === "boucle" && trip.start) {
+    pts.push(trip.start);
+  } else if (trip.mode === "aller-retour") {
+    const retour = pts.slice(0, -1).reverse();
+    pts.push(...retour);
+  } else if (trip.mode === "point" && trip.end) {
+    pts.push(trip.end);
+  }
+  return pts;
+}
+
+async function traceRoute() {
+  const pts = waypoints();
+  const btn = document.getElementById("pmw-trace");
+  if (pts.length < 2) return;
+
+  btn.disabled = true;
+  btn.textContent = "Calcul de l'itinéraire…";
+
+  try {
+    const coords = pts.map(p => `${p.lon},${p.lat}`).join(";");
+    const res = await fetch(`${OSRM}${coords}?overview=full&geometries=geojson&steps=false`);
+    if (!res.ok) throw new Error("OSRM " + res.status);
+    const data = await res.json();
+    if (!data.routes || !data.routes.length) throw new Error("aucun itinéraire");
+
+    const r = data.routes[0];
+    trip.route = {
+      coords: r.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
+      distance: r.distance,     // mètres
+      duration: r.duration      // secondes
+    };
+
+    btn.textContent = "Calcul du dénivelé…";
+    trip.route.denivele = await computeElevation(trip.route.coords);
+  } catch (err) {
+    console.error(err);
+    trip.route = null;
+    document.getElementById("pmw-result").hidden = false;
+    document.getElementById("pmw-result-stats").innerHTML =
+      `<div class="pmw-route-error">Impossible de calculer l'itinéraire.
+       Le service est peut-être momentanément indisponible, ou aucun trajet
+       routier ne relie ces points.</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🏍️ Tracer l'itinéraire";
+    renderBuilder();
+  }
+}
+
+/** Dénivelé positif cumulé, par échantillonnage du tracé (Open-Meteo). */
+async function computeElevation(coords) {
+  try {
+    const N = Math.min(100, coords.length);
+    const step = Math.max(1, Math.floor(coords.length / N));
+    const sample = coords.filter((_, i) => i % step === 0).slice(0, 100);
+
+    const lats = sample.map(c => c[0].toFixed(4)).join(",");
+    const lons = sample.map(c => c[1].toFixed(4)).join(",");
+    const res = await fetch(
+      `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`);
+    if (!res.ok) throw new Error("elevation " + res.status);
+    const { elevation } = await res.json();
+    if (!Array.isArray(elevation)) throw new Error("pas de données");
+
+    let dplus = 0;
+    for (let i = 1; i < elevation.length; i++) {
+      const d = elevation[i] - elevation[i - 1];
+      if (d > 0) dplus += d;
+    }
+    return { dplus: Math.round(dplus), max: Math.round(Math.max(...elevation)) };
+  } catch (err) {
+    console.warn("Dénivelé indisponible :", err);
+    return null;
+  }
+}
+
+function renderBuilder() {
+  if (!builderMap) return;
+
+  // --- cols sélectionnés ---
+  COLS.forEach(c => {
+    const m = builderMarkers[c.nom];
+    if (!m) return;
+    const on = trip.cols.includes(c.nom);
+    m.setStyle({
+      fillColor: on ? "#c98a55" : (STATE_COLOR[c.etat] || STATE_COLOR.bon),
+      color: on ? "#f2ead9" : "#14161a",
+      radius: on ? 12 : 9, weight: on ? 3 : 2
+    });
+  });
+
+  const chips = document.getElementById("pmw-col-chips");
+  chips.innerHTML = trip.cols.length
+    ? trip.cols.map((n, i) => `
+        <span class="pmw-chip-item">
+          <b>${i + 1}</b>${n}
+          <button data-rmcol="${i}" aria-label="Retirer">✕</button>
+        </span>`).join("")
+    : `<span class="pmw-chips-empty">Aucun col — clique sur la carte ou utilise la liste</span>`;
+  chips.querySelectorAll("[data-rmcol]").forEach(b =>
+    b.addEventListener("click", () => { trip.cols.splice(+b.dataset.rmcol, 1); trip.route = null; renderBuilder(); }));
+
+  // --- points de passage ---
+  const via = document.getElementById("pmw-via-chips");
+  via.innerHTML = trip.via.length
+    ? trip.via.map((p, i) => `
+        <span class="pmw-chip-item">
+          ${p.label}<button data-rmvia="${i}" aria-label="Retirer">✕</button>
+        </span>`).join("")
+    : `<span class="pmw-chips-empty">Aucun</span>`;
+  via.querySelectorAll("[data-rmvia]").forEach(b =>
+    b.addEventListener("click", () => { trip.via.splice(+b.dataset.rmvia, 1); trip.route = null; renderBuilder(); }));
+
+  // --- libellés départ / arrivée ---
+  document.getElementById("pmw-start-label").textContent = trip.start ? trip.start.label : "Non défini";
+  document.getElementById("pmw-start-label").classList.toggle("set", !!trip.start);
+  document.getElementById("pmw-end-label").textContent = trip.end ? trip.end.label : "Non défini";
+  document.getElementById("pmw-end-label").classList.toggle("set", !!trip.end);
+
+  // --- marqueurs départ / arrivée / passages ---
+  const pin = (cls, txt) => L.divIcon({
+    className: "", html: `<span class="pmw-mk ${cls}">${txt}</span>`,
+    iconSize: [24, 24], iconAnchor: [12, 12]
+  });
+  if (startMarker) { builderMap.removeLayer(startMarker); startMarker = null; }
+  if (endMarker)   { builderMap.removeLayer(endMarker);   endMarker = null; }
+  viaMarkers.forEach(m => builderMap.removeLayer(m)); viaMarkers = [];
+
+  if (trip.start) startMarker = L.marker([trip.start.lat, trip.start.lon], { icon: pin("d", "D") }).addTo(builderMap);
+  if (trip.end && trip.mode === "point")
+    endMarker = L.marker([trip.end.lat, trip.end.lon], { icon: pin("a", "A") }).addTo(builderMap);
+  trip.via.forEach(p =>
+    viaMarkers.push(L.marker([p.lat, p.lon], { icon: pin("p", "P") }).addTo(builderMap)));
+
+  // --- tracé ---
+  if (routeLayer) { builderMap.removeLayer(routeLayer); routeLayer = null; }
+  if (trip.route) {
+    routeLayer = L.polyline(trip.route.coords, {
+      color: "#c98a55", weight: 5, opacity: .9
+    }).addTo(builderMap);
+    builderMap.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+  }
+
+  // --- résultat ---
+  const resBox = document.getElementById("pmw-result");
+  const stats = document.getElementById("pmw-result-stats");
+  if (trip.route) {
+    const km = (trip.route.distance / 1000).toFixed(0);
+    const h = Math.floor(trip.route.duration / 3600);
+    const min = Math.round((trip.route.duration % 3600) / 60);
+    const d = trip.route.denivele;
+    resBox.hidden = false;
+    stats.innerHTML = `
+      <div><b>${km} km</b><span>distance</span></div>
+      <div><b>${h ? h + " h " : ""}${min} min</b><span>temps de route</span></div>
+      ${d ? `<div><b>${d.dplus} m</b><span>dénivelé +</span></div>
+             <div><b>${d.max} m</b><span>point haut</span></div>` : ""}`;
+  } else if (!stats.querySelector(".pmw-route-error")) {
+    resBox.hidden = true;
+  }
+
+  // --- bouton ---
+  const ready = waypoints().length >= 2;
+  document.getElementById("pmw-trace").disabled = !ready;
+}
+
+/* ---------- Export GPX ---------- */
+
+function downloadGPX() {
+  if (!trip.route) return;
+  const nom = `Pyrolos - ${trip.cols.join(" + ") || "itineraire"}`;
+  const pts = trip.route.coords
+    .map(([lat, lon]) => `      <trkpt lat="${lat.toFixed(6)}" lon="${lon.toFixed(6)}"/>`)
+    .join("\n");
+
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Pyrolos" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>${escapeXml(nom)}</name></metadata>
+  <trk>
+    <name>${escapeXml(nom)}</name>
+    <trkseg>
+${pts}
+    </trkseg>
+  </trk>
+</gpx>`;
+
+  const blob = new Blob([gpx], { type: "application/gpx+xml" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nom.replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").toLowerCase() + ".gpx";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function escapeXml(s) {
+  return s.replace(/[<>&'"]/g, c =>
+    ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]));
+}
+
+/** Ouvre le même parcours dans Google Maps (URL sans clé d'API). */
+function openInGoogleMaps() {
+  const pts = waypoints();
+  if (pts.length < 2) return;
+  const f = p => `${p.lat},${p.lon}`;
+  const params = new URLSearchParams({
+    api: "1", travelmode: "driving",
+    origin: f(pts[0]),
+    destination: f(pts[pts.length - 1])
+  });
+  const mid = pts.slice(1, -1).slice(0, 9);
+  if (mid.length) params.set("waypoints", mid.map(f).join("|"));
+  window.open(`https://www.google.com/maps/dir/?${params}`, "_blank", "noopener");
+}
+
 /* ---------- Onglets ---------- */
 
 function initTabs() {
   const tabs = document.querySelectorAll(".pmw-tab");
   const views = {
     carte: document.getElementById("view-carte"),
+    itineraires: document.getElementById("view-itineraires"),
     classement: document.getElementById("view-classement"),
     succes: document.getElementById("view-succes")
   };
@@ -424,6 +834,9 @@ function initTabs() {
       });
       if (tab.dataset.view === "carte" && map) {
         setTimeout(() => map.invalidateSize(), 50);
+      }
+      if (tab.dataset.view === "itineraires" && builderMap) {
+        setTimeout(() => builderMap.invalidateSize(), 50);
       }
     });
   });
