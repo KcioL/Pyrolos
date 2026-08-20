@@ -61,6 +61,7 @@
   <nav class="pmw-tabs">
     <button class="pmw-tab active" data-view="carte">Carte</button>
     <button class="pmw-tab" data-view="itineraires">Itinéraires</button>
+    <button class="pmw-tab" data-view="riders">Rouler ensemble</button>
     <button class="pmw-tab" data-view="classement">Classement</button>
     <button class="pmw-tab" data-view="succes">Succès</button>
   </nav>
@@ -194,6 +195,33 @@
     </div>
   </section>
 
+  <!-- ============ VUE ROULER ENSEMBLE ============ -->
+  <section class="pmw-view" id="view-riders" hidden>
+    <div class="pmw-section-head">
+      <h2>Rouler ensemble</h2>
+      <p class="pmw-section-sub">
+        Publie ta fiche — ton style de conduite, ton secteur, tes dispos — et
+        repère les motards qui roulent comme toi. Le contact se fait par Instagram.
+      </p>
+      <div class="pmw-riders-bar">
+        <select class="pmw-select pmw-select-inline" id="pmw-filter-massif">
+          <option value="">Tous les secteurs</option>
+        </select>
+        <select class="pmw-select pmw-select-inline" id="pmw-filter-style">
+          <option value="">Tous les styles</option>
+          <option value="tranquille">Tranquille</option>
+          <option value="normal">Normal</option>
+          <option value="sportif">Sportif</option>
+          <option value="arsouille">Arsouille</option>
+        </select>
+        <button class="pmw-btn pmw-btn-primary" id="pmw-my-card-btn">🤝 Créer ma fiche</button>
+      </div>
+    </div>
+
+    <div class="pmw-riders" id="pmw-riders"></div>
+    <p class="pmw-riders-note" id="pmw-riders-count"></p>
+  </section>
+
   <!-- ============ VUE CLASSEMENT ============ -->
   <section class="pmw-view" id="view-classement" hidden>
     <div class="pmw-section-head">
@@ -275,6 +303,64 @@
       <h2 class="pmw-modal-title" id="pmw-lost-title"></h2>
       <p class="pmw-lost-text" id="pmw-lost-text"></p>
       <button class="pmw-btn pmw-btn-primary pmw-btn-full" data-lost-close>C'est noté…</button>
+    </div>
+  </div>
+
+  <!-- ============ MODALE FICHE MOTARD ============ -->
+  <div class="pmw-modal" id="pmw-card-modal" hidden>
+    <div class="pmw-modal-backdrop" data-card-close></div>
+    <div class="pmw-modal-box" role="dialog" aria-modal="true" aria-labelledby="pmw-card-title">
+      <button class="pmw-modal-close" data-card-close aria-label="Fermer">&times;</button>
+      <h2 class="pmw-modal-title" id="pmw-card-title">Ma fiche</h2>
+      <p class="pmw-modal-sub">Elle sera visible par tous les visiteurs du site.</p>
+
+      <div class="pmw-field">
+        <label for="pmw-card-style">Comment tu roules</label>
+        <select class="pmw-select" id="pmw-card-style">
+          <option value="tranquille">Tranquille — balade, photos, arrêts fréquents</option>
+          <option value="normal" selected>Normal — rythme régulier, sans forcer</option>
+          <option value="sportif">Sportif — bon rythme, courbes enroulées</option>
+          <option value="arsouille">Arsouille — ça envoie dans les cols</option>
+        </select>
+      </div>
+
+      <div class="pmw-field">
+        <label for="pmw-card-massif">Secteur habituel</label>
+        <select class="pmw-select" id="pmw-card-massif"></select>
+      </div>
+
+      <div class="pmw-field">
+        <label for="pmw-card-moto">Ta moto <span class="pmw-optional-tag">facultatif</span></label>
+        <input type="text" id="pmw-card-moto" maxlength="60" placeholder="Ex. Yamaha MT-09">
+      </div>
+
+      <div class="pmw-field">
+        <label for="pmw-card-dispo">Quand tu roules <span class="pmw-optional-tag">facultatif</span></label>
+        <input type="text" id="pmw-card-dispo" maxlength="60" placeholder="Ex. week-ends, jeudi soir">
+      </div>
+
+      <div class="pmw-field">
+        <label for="pmw-card-desc">Quelques mots <span class="pmw-optional-tag">facultatif</span></label>
+        <textarea id="pmw-card-desc" maxlength="300" rows="3" placeholder="Ce que tu cherches, ton expérience…"></textarea>
+      </div>
+
+      <div class="pmw-field">
+        <label for="pmw-card-insta">Instagram <span class="pmw-optional-tag">facultatif</span></label>
+        <input type="text" id="pmw-card-insta" maxlength="40" placeholder="ton_pseudo (sans @)">
+      </div>
+
+      <div class="pmw-warn">
+        <strong>Ta fiche est publique.</strong>
+        Pseudo, secteur et compte Instagram seront visibles de tous, y compris
+        des visiteurs non connectés. N'y mets rien que tu ne veuilles rendre public.
+      </div>
+
+      <div class="pmw-modal-error" id="pmw-card-error" hidden></div>
+
+      <button class="pmw-btn pmw-btn-primary pmw-btn-full" id="pmw-card-save">Publier ma fiche</button>
+      <div class="pmw-modal-links">
+        <button class="pmw-link" id="pmw-card-delete" hidden>Retirer ma fiche</button>
+      </div>
     </div>
   </div>
 

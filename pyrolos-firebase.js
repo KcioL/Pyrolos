@@ -394,3 +394,75 @@ export const Trips = {
     await deleteDoc(doc(db, "users", user.uid, "trips", id));
   }
 };
+
+
+/* ============================================================
+   FICHES "ROULER ENSEMBLE"
+   Modèle : riders/{uid}  ->  un document par utilisateur
+
+   Collection PUBLIQUE en lecture : c'est le principe même de la
+   fonctionnalité. En écriture, chacun ne peut toucher qu'au
+   document portant son propre uid.
+
+   L'utilisateur est prévenu avant publication que sa fiche est
+   visible de tous, Instagram compris.
+   ============================================================ */
+
+export const STYLES = [
+  { id: "tranquille", label: "Tranquille", desc: "Balade, photos, arrêts fréquents" },
+  { id: "normal",     label: "Normal",     desc: "Rythme régulier, sans forcer" },
+  { id: "sportif",    label: "Sportif",    desc: "Bon rythme, courbes enroulées" },
+  { id: "arsouille",  label: "Arsouille",  desc: "Ça envoie dans les cols" }
+];
+
+export const Riders = {
+  /** Toutes les fiches publiées. */
+  async list() {
+    try {
+      const snap = await getDocs(collection(db, "riders"));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.error("Lecture des fiches impossible :", err);
+      return [];
+    }
+  },
+
+  /** Fiche de l'utilisateur connecté, ou null. */
+  async mine() {
+    const user = Auth.current;
+    if (!user) return null;
+    try {
+      const snap = await getDoc(doc(db, "riders", user.uid));
+      return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    } catch { return null; }
+  },
+
+  /** Crée ou met à jour sa fiche. */
+  async save(data) {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+
+    const insta = (data.instagram || "").trim().replace(/^@/, "").slice(0, 40);
+    if (insta && !/^[A-Za-z0-9._]+$/.test(insta)) {
+      const e = new Error("Pseudo Instagram invalide."); e.code = "pyrolos/bad-insta"; throw e;
+    }
+
+    await setDoc(doc(db, "riders", user.uid), {
+      pseudo: displayNameOf(user).slice(0, 40),
+      style: data.style || "normal",
+      massif: (data.massif || "").slice(0, 60),
+      moto: (data.moto || "").trim().slice(0, 60),
+      dispo: (data.dispo || "").trim().slice(0, 60),
+      desc: (data.desc || "").trim().slice(0, 300),
+      instagram: insta,
+      cols: Number(data.cols) || 0,
+      updatedAt: serverTimestamp()
+    });
+  },
+
+  async remove() {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+    await deleteDoc(doc(db, "riders", user.uid));
+  }
+};

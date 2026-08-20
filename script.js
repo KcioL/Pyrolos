@@ -123,6 +123,7 @@ async function init() {
   initTabs();
   initSort();
   initBuilder();
+  initRiders();
 }
 
 /* ---------- Stats & filtres (vue Carte) ---------- */
@@ -1129,6 +1130,166 @@ function openInGoogleMaps() {
   window.open(`https://www.google.com/maps/dir/?${params}`, "_blank", "noopener");
 }
 
+/* =========================================================================
+   ROULER ENSEMBLE
+   ========================================================================= */
+
+const STYLE_LABELS = {
+  tranquille: "Tranquille",
+  normal:     "Normal",
+  sportif:    "Sportif",
+  arsouille:  "Arsouille"
+};
+
+let RIDERS = [];
+let filterMassif = "", filterStyle = "";
+
+function initRiders() {
+  const btn = document.getElementById("pmw-my-card-btn");
+  if (!btn) return;
+
+  // secteurs : les massifs des cols + une option générale
+  const massifs = [...new Set(COLS.map(c => c.massif))];
+  const selFilter = document.getElementById("pmw-filter-massif");
+  const selForm = document.getElementById("pmw-card-massif");
+  massifs.forEach(m => {
+    selFilter.appendChild(new Option(m, m));
+    selForm.appendChild(new Option(m, m));
+  });
+  selForm.appendChild(new Option("Toutes les Pyrénées", "Toutes les Pyrénées"));
+
+  selFilter.addEventListener("change", e => { filterMassif = e.target.value; renderRiders(); });
+  document.getElementById("pmw-filter-style")
+    .addEventListener("change", e => { filterStyle = e.target.value; renderRiders(); });
+
+  btn.addEventListener("click", openCardModal);
+  document.getElementById("pmw-card-save").addEventListener("click", saveCard);
+  document.getElementById("pmw-card-delete").addEventListener("click", deleteCard);
+
+  const modal = document.getElementById("pmw-card-modal");
+  modal.addEventListener("click", e => {
+    if (e.target.hasAttribute("data-card-close")) modal.hidden = true;
+  });
+
+  loadRiders();
+}
+
+async function loadRiders() {
+  if (!window.PyrolosRiders) return;
+  RIDERS = await window.PyrolosRiders.list();
+  renderRiders();
+}
+
+function renderRiders() {
+  const host = document.getElementById("pmw-riders");
+  const countEl = document.getElementById("pmw-riders-count");
+  if (!host) return;
+
+  const list = RIDERS.filter(r =>
+    (!filterMassif || r.massif === filterMassif) &&
+    (!filterStyle || r.style === filterStyle));
+
+  if (!list.length) {
+    host.innerHTML = `<div class="pmw-empty">
+      ${RIDERS.length ? "Aucune fiche ne correspond à ces filtres."
+                      : "Aucune fiche pour le moment. Sois le premier à te présenter !"}
+    </div>`;
+    countEl.textContent = "";
+    return;
+  }
+
+  host.innerHTML = list.map(r => `
+    <div class="pmw-rider style-${r.style}">
+      <div class="pmw-rider-head">
+        <h3>${escapeHtml(r.pseudo || "Motard")}</h3>
+        <span class="pmw-rider-style">${STYLE_LABELS[r.style] || r.style}</span>
+      </div>
+      <div class="pmw-rider-meta">
+        ${r.massif ? `<span>📍 ${escapeHtml(r.massif)}</span>` : ""}
+        ${r.moto ? `<span>🏍️ ${escapeHtml(r.moto)}</span>` : ""}
+        ${r.dispo ? `<span>🗓️ ${escapeHtml(r.dispo)}</span>` : ""}
+        ${r.cols ? `<span>⛰️ ${r.cols} cols roulés</span>` : ""}
+      </div>
+      ${r.desc ? `<p class="pmw-rider-desc">${escapeHtml(r.desc)}</p>` : ""}
+      ${r.instagram
+        ? `<a class="pmw-rider-insta" href="https://instagram.com/${encodeURIComponent(r.instagram)}"
+              target="_blank" rel="noopener noreferrer">📷 @${escapeHtml(r.instagram)}</a>`
+        : `<span class="pmw-rider-nocontact">Pas de contact renseigné</span>`}
+    </div>
+  `).join("");
+
+  const n = list.length;
+  countEl.textContent = n === 1
+    ? "1 motard sur la ligne de départ."
+    : `${n} motards sur la ligne de départ.`;
+}
+
+async function openCardModal() {
+  const modal = document.getElementById("pmw-card-modal");
+  const err = document.getElementById("pmw-card-error");
+  err.hidden = true;
+
+  if (!window.PyrolosRiders || !window.PyrolosRiders.isSignedIn()) {
+    if (window.PyrolosRating) window.PyrolosRating.openLogin();
+    return;
+  }
+
+  // pré-remplir si une fiche existe déjà
+  const mine = await window.PyrolosRiders.mine();
+  document.getElementById("pmw-card-title").textContent = mine ? "Modifier ma fiche" : "Ma fiche";
+  document.getElementById("pmw-card-save").textContent = mine ? "Mettre à jour" : "Publier ma fiche";
+  document.getElementById("pmw-card-delete").hidden = !mine;
+
+  if (mine) {
+    document.getElementById("pmw-card-style").value = mine.style || "normal";
+    document.getElementById("pmw-card-massif").value = mine.massif || "";
+    document.getElementById("pmw-card-moto").value = mine.moto || "";
+    document.getElementById("pmw-card-dispo").value = mine.dispo || "";
+    document.getElementById("pmw-card-desc").value = mine.desc || "";
+    document.getElementById("pmw-card-insta").value = mine.instagram || "";
+  }
+
+  modal.hidden = false;
+}
+
+async function saveCard() {
+  const btn = document.getElementById("pmw-card-save");
+  const err = document.getElementById("pmw-card-error");
+  err.hidden = true;
+  btn.disabled = true;
+
+  try {
+    await window.PyrolosRiders.save({
+      style:  document.getElementById("pmw-card-style").value,
+      massif: document.getElementById("pmw-card-massif").value,
+      moto:   document.getElementById("pmw-card-moto").value,
+      dispo:  document.getElementById("pmw-card-dispo").value,
+      desc:   document.getElementById("pmw-card-desc").value,
+      instagram: document.getElementById("pmw-card-insta").value,
+      cols: getRidden().size
+    });
+    document.getElementById("pmw-card-modal").hidden = true;
+    await loadRiders();
+  } catch (e) {
+    console.error(e);
+    err.hidden = false;
+    err.textContent = e.code === "pyrolos/bad-insta"
+      ? "Pseudo Instagram invalide (lettres, chiffres, point et underscore uniquement)."
+      : "Publication impossible. Réessaie.";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteCard() {
+  await window.PyrolosRiders.remove();
+  document.getElementById("pmw-card-modal").hidden = true;
+  await loadRiders();
+}
+
+// rechargement à la connexion / déconnexion
+window.pyrolosRefreshRiders = loadRiders;
+
 /* ---------- Onglets ---------- */
 
 function initTabs() {
@@ -1136,6 +1297,7 @@ function initTabs() {
   const views = {
     carte: document.getElementById("view-carte"),
     itineraires: document.getElementById("view-itineraires"),
+    riders: document.getElementById("view-riders"),
     classement: document.getElementById("view-classement"),
     succes: document.getElementById("view-succes")
   };
