@@ -315,13 +315,22 @@
       <p class="pmw-modal-sub">Elle sera visible par tous les visiteurs du site.</p>
 
       <div class="pmw-field">
-        <label for="pmw-card-style">Comment tu roules</label>
-        <select class="pmw-select" id="pmw-card-style">
-          <option value="tranquille">Tranquille — balade, photos, arrêts fréquents</option>
-          <option value="normal" selected>Normal — rythme régulier, sans forcer</option>
-          <option value="sportif">Sportif — bon rythme, courbes enroulées</option>
-          <option value="arsouille">Arsouille — ça envoie dans les cols</option>
-        </select>
+        <label>Comment tu roules <span class="pmw-optional-tag">1 à 3 choix</span></label>
+        <div class="pmw-style-picker" id="pmw-style-picker">
+          <button type="button" class="pmw-style-opt" data-style="tranquille">
+            <b>Tranquille</b><em>Balade, photos, arrêts fréquents</em>
+          </button>
+          <button type="button" class="pmw-style-opt" data-style="normal">
+            <b>Normal</b><em>Rythme régulier, sans forcer</em>
+          </button>
+          <button type="button" class="pmw-style-opt" data-style="sportif">
+            <b>Sportif</b><em>Bon rythme, courbes enroulées</em>
+          </button>
+          <button type="button" class="pmw-style-opt" data-style="arsouille">
+            <b>Arsouille</b><em>Ça envoie dans les cols</em>
+          </button>
+        </div>
+        <small class="pmw-hint" id="pmw-style-hint">Sélectionne 1 à 3 styles.</small>
       </div>
 
       <div class="pmw-field">

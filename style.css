@@ -782,3 +782,29 @@ body{
   font-family:'Work Sans',sans-serif; font-weight:600; font-size:13px;
 }
 .pmw-btn-cancel:hover{ border-color:#b3574a; color:#e0a08a; }
+
+/* ---------- CHOIX MULTIPLE DU STYLE DE CONDUITE ---------- */
+.pmw-style-picker{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.pmw-style-opt{
+  text-align:left; cursor:pointer; transition:.14s;
+  background:var(--night-950); border:1px solid var(--line);
+  border-radius:9px; padding:9px 11px;
+  font-family:'Work Sans',sans-serif;
+}
+.pmw-style-opt b{
+  display:block; font-size:12.5px; font-weight:600; color:var(--text-primary); margin-bottom:2px;
+}
+.pmw-style-opt em{ display:block; font-style:normal; font-size:10.5px; color:var(--text-muted); line-height:1.3; }
+.pmw-style-opt:hover{ border-color:var(--sage); }
+.pmw-style-opt.on{ border-color:var(--sage); background:rgba(131,163,116,.14); }
+.pmw-style-opt.on b::after{ content:" ✓"; color:var(--sage); }
+.pmw-hint.ko{ color:var(--warn); font-weight:600; }
+
+/* plusieurs pastilles de style sur une fiche */
+.pmw-rider-styles{ display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
+.pmw-rider-style.s-tranquille{ background:rgba(127,169,111,.2); color:var(--good); }
+.pmw-rider-style.s-normal{ background:rgba(108,146,179,.2); color:var(--slate-blue); }
+.pmw-rider-style.s-sportif{ background:rgba(201,138,60,.2); color:var(--warn); }
+.pmw-rider-style.s-arsouille{ background:rgba(201,86,74,.22); color:#e0857a; }
+
+@media(max-width:400px){ .pmw-style-picker{ grid-template-columns:1fr; } }

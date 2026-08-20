@@ -1143,6 +1143,14 @@ const STYLE_LABELS = {
 
 let RIDERS = [];
 let filterMassif = "", filterStyle = "";
+let cardStyles = ["normal"];          // styles cochés dans le formulaire
+const MAX_STYLES = 3;
+
+/** Styles d'une fiche, en gérant les anciennes fiches à style unique. */
+function stylesOf(r) {
+  if (Array.isArray(r.styles) && r.styles.length) return r.styles;
+  return r.style ? [r.style] : [];
+}
 
 function initRiders() {
   const btn = document.getElementById("pmw-my-card-btn");
@@ -1163,6 +1171,9 @@ function initRiders() {
     .addEventListener("change", e => { filterStyle = e.target.value; renderRiders(); });
 
   btn.addEventListener("click", openCardModal);
+
+  document.querySelectorAll(".pmw-style-opt").forEach(b =>
+    b.addEventListener("click", () => toggleCardStyle(b.dataset.style)));
   document.getElementById("pmw-card-save").addEventListener("click", saveCard);
   document.getElementById("pmw-card-delete").addEventListener("click", deleteCard);
 
@@ -1191,7 +1202,7 @@ function renderRiders() {
 
   const list = RIDERS.filter(r =>
     (!filterMassif || r.massif === filterMassif) &&
-    (!filterStyle || r.style === filterStyle));
+    (!filterStyle || stylesOf(r).includes(filterStyle)));
 
   if (!list.length) {
     host.innerHTML = `<div class="pmw-empty">
@@ -1203,10 +1214,13 @@ function renderRiders() {
   }
 
   host.innerHTML = list.map(r => `
-    <div class="pmw-rider style-${r.style}">
+    <div class="pmw-rider style-${stylesOf(r)[0] || "normal"}">
       <div class="pmw-rider-head">
         <h3>${escapeHtml(r.pseudo || "Motard")}</h3>
-        <span class="pmw-rider-style">${STYLE_LABELS[r.style] || r.style}</span>
+      </div>
+      <div class="pmw-rider-styles">
+        ${stylesOf(r).map(s =>
+          `<span class="pmw-rider-style s-${s}">${STYLE_LABELS[s] || s}</span>`).join("")}
       </div>
       <div class="pmw-rider-meta">
         ${r.massif ? `<span>📍 ${escapeHtml(r.massif)}</span>` : ""}
@@ -1228,6 +1242,38 @@ function renderRiders() {
     : `${n} motards sur la ligne de départ.`;
 }
 
+/** Coche / décoche un style, dans la limite de MAX_STYLES. */
+function toggleCardStyle(id) {
+  const hint = document.getElementById("pmw-style-hint");
+  const i = cardStyles.indexOf(id);
+
+  if (i !== -1) {
+    cardStyles.splice(i, 1);
+  } else if (cardStyles.length >= MAX_STYLES) {
+    hint.textContent = `3 styles maximum — décoche-en un avant d'en ajouter un autre.`;
+    hint.classList.add("ko");
+    setTimeout(() => {
+      hint.textContent = "Sélectionne 1 à 3 styles.";
+      hint.classList.remove("ko");
+    }, 2200);
+    return;
+  } else {
+    cardStyles.push(id);
+  }
+  renderStylePicker();
+}
+
+function renderStylePicker() {
+  document.querySelectorAll(".pmw-style-opt").forEach(b =>
+    b.classList.toggle("on", cardStyles.includes(b.dataset.style)));
+  const hint = document.getElementById("pmw-style-hint");
+  if (!hint.classList.contains("ko")) {
+    hint.textContent = cardStyles.length
+      ? `${cardStyles.length} / ${MAX_STYLES} sélectionné${cardStyles.length > 1 ? "s" : ""}`
+      : "Sélectionne 1 à 3 styles.";
+  }
+}
+
 async function openCardModal() {
   const modal = document.getElementById("pmw-card-modal");
   const err = document.getElementById("pmw-card-error");
@@ -1245,13 +1291,17 @@ async function openCardModal() {
   document.getElementById("pmw-card-delete").hidden = !mine;
 
   if (mine) {
-    document.getElementById("pmw-card-style").value = mine.style || "normal";
+    // compatibilité : les fiches créées avant avaient un seul style
+    cardStyles = mine.styles || (mine.style ? [mine.style] : ["normal"]);
     document.getElementById("pmw-card-massif").value = mine.massif || "";
     document.getElementById("pmw-card-moto").value = mine.moto || "";
     document.getElementById("pmw-card-dispo").value = mine.dispo || "";
     document.getElementById("pmw-card-desc").value = mine.desc || "";
     document.getElementById("pmw-card-insta").value = mine.instagram || "";
+  } else {
+    cardStyles = ["normal"];
   }
+  renderStylePicker();
 
   modal.hidden = false;
 }
@@ -1264,7 +1314,7 @@ async function saveCard() {
 
   try {
     await window.PyrolosRiders.save({
-      style:  document.getElementById("pmw-card-style").value,
+      styles: cardStyles,
       massif: document.getElementById("pmw-card-massif").value,
       moto:   document.getElementById("pmw-card-moto").value,
       dispo:  document.getElementById("pmw-card-dispo").value,
@@ -1277,8 +1327,11 @@ async function saveCard() {
   } catch (e) {
     console.error(e);
     err.hidden = false;
-    err.textContent = e.code === "pyrolos/bad-insta"
-      ? "Pseudo Instagram invalide (lettres, chiffres, point et underscore uniquement)."
+    err.textContent =
+      e.code === "pyrolos/bad-insta"
+        ? "Pseudo Instagram invalide (lettres, chiffres, point et underscore uniquement)."
+      : e.code === "pyrolos/no-style"
+        ? "Choisis au moins un style de conduite."
       : "Publication impossible. Réessaie.";
   } finally {
     btn.disabled = false;

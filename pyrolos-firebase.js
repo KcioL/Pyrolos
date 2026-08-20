@@ -447,9 +447,20 @@ export const Riders = {
       const e = new Error("Pseudo Instagram invalide."); e.code = "pyrolos/bad-insta"; throw e;
     }
 
+    // 1 à 3 styles, filtrés sur les valeurs connues pour éviter
+    // qu'une valeur inattendue soit enregistrée
+    const valides = STYLES.map(s => s.id);
+    const styles = [...new Set(data.styles || [])]
+                     .filter(s => valides.includes(s))
+                     .slice(0, 3);
+    if (!styles.length) {
+      const e = new Error("Choisis au moins un style de conduite.");
+      e.code = "pyrolos/no-style"; throw e;
+    }
+
     await setDoc(doc(db, "riders", user.uid), {
       pseudo: displayNameOf(user).slice(0, 40),
-      style: data.style || "normal",
+      styles,
       massif: (data.massif || "").slice(0, 60),
       moto: (data.moto || "").trim().slice(0, 60),
       dispo: (data.dispo || "").trim().slice(0, 60),
