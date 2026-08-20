@@ -555,6 +555,7 @@ function initBuilder() {
 
   document.getElementById("pmw-trace").addEventListener("click", traceRoute);
   document.getElementById("pmw-save-trip").addEventListener("click", saveTrip);
+  document.getElementById("pmw-fuel-toggle").addEventListener("click", toggleFuel);
   document.getElementById("pmw-gpx").addEventListener("click", downloadGPX);
   document.getElementById("pmw-open-maps").addEventListener("click", openInGoogleMaps);
   document.getElementById("pmw-clear-route").addEventListener("click", () => {
@@ -647,6 +648,7 @@ async function traceRoute() {
 
     btn.textContent = "Calcul du dénivelé…";
     trip.route.denivele = await computeElevation(trip.route.coords);
+    fuelCache = null;   // l'emprise a changé : les stations seront rechargées
   } catch (err) {
     console.error(err);
     trip.route = null;
@@ -777,6 +779,101 @@ function renderBuilder() {
   // --- bouton ---
   const ready = waypoints().length >= 2;
   document.getElementById("pmw-trace").disabled = !ready;
+}
+
+/* ---------- Stations-service ----------
+   Données OpenStreetMap via Overpass (gratuit, sans clé).
+   Chargement à la demande, sur l'emprise visible ou celle du tracé.  */
+
+const OVERPASS = "https://overpass-api.de/api/interpreter";
+let fuelLayer = null;
+let fuelShown = false;
+let fuelCache = null;      // { bbox, stations }
+
+function fuelIcon() {
+  return L.divIcon({
+    className: "",
+    html: '<span class="pmw-fuel-mk">⛽</span>',
+    iconSize: [22, 22], iconAnchor: [11, 11]
+  });
+}
+
+async function toggleFuel() {
+  const btn = document.getElementById("pmw-fuel-toggle");
+  const label = document.getElementById("pmw-fuel-label");
+
+  if (fuelShown) {
+    if (fuelLayer) { builderMap.removeLayer(fuelLayer); fuelLayer = null; }
+    fuelShown = false;
+    btn.classList.remove("on");
+    label.textContent = "Stations";
+    return;
+  }
+
+  // emprise : celle du tracé si présent, sinon la vue courante
+  let b;
+  if (routeLayer) {
+    b = routeLayer.getBounds().pad(0.12);
+  } else {
+    b = builderMap.getBounds();
+  }
+  const bbox = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()]
+                 .map(v => v.toFixed(4)).join(",");
+
+  btn.disabled = true;
+  label.textContent = "Chargement…";
+
+  try {
+    let stations;
+    if (fuelCache && fuelCache.bbox === bbox) {
+      stations = fuelCache.stations;
+    } else {
+      const q = `[out:json][timeout:25];
+        (node["amenity"="fuel"](${bbox});
+         way["amenity"="fuel"](${bbox}););
+        out center 200;`;
+      const res = await fetch(OVERPASS, {
+        method: "POST",
+        body: "data=" + encodeURIComponent(q),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      });
+      if (!res.ok) throw new Error("Overpass " + res.status);
+      const data = await res.json();
+      stations = (data.elements || []).map(el => ({
+        lat: el.lat ?? el.center?.lat,
+        lon: el.lon ?? el.center?.lon,
+        nom: el.tags?.name || el.tags?.brand || "Station-service",
+        h24: el.tags?.opening_hours === "24/7",
+        cb: el.tags?.["payment:credit_cards"] === "yes"
+      })).filter(s => s.lat && s.lon);
+      fuelCache = { bbox, stations };
+    }
+
+    if (!stations.length) {
+      label.textContent = "Aucune station";
+      setTimeout(() => { label.textContent = "Stations"; }, 2200);
+      return;
+    }
+
+    fuelLayer = L.layerGroup(
+      stations.map(s =>
+        L.marker([s.lat, s.lon], { icon: fuelIcon() })
+         .bindTooltip(
+           `<b>${s.nom}</b>${s.h24 ? "<br>Ouvert 24h/24" : ""}${s.cb ? "<br>Carte bancaire" : ""}`,
+           { direction: "top", offset: [0, -8] })
+      )
+    ).addTo(builderMap);
+
+    fuelShown = true;
+    btn.classList.add("on");
+    label.textContent = `${stations.length} stations`;
+  } catch (err) {
+    console.error("Stations indisponibles :", err);
+    label.textContent = "Indisponible";
+    setTimeout(() => { label.textContent = "Stations"; }, 2500);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 /* ---------- Itinéraires personnels ---------- */
