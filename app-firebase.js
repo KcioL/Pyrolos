@@ -81,6 +81,7 @@ const forgotBtn= $("pmw-forgot");
 const lostModal= $("pmw-lost");
 
 let mode = "login";
+let revealed = false;
 
 function openModal(m) {
   mode = m;
@@ -101,7 +102,6 @@ function closeModal() {
 /* Basculer l'affichage en clair des deux champs de mot de passe.
    Utile à l'inscription : permet de relire ce qu'on a tapé plutôt
    que de deviner sous les points. */
-let revealed = false;
 function setRevealed(on) {
   revealed = on;
   const type = on ? "text" : "password";
