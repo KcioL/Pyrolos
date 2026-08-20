@@ -184,9 +184,11 @@ function openDetail(i) {
 
     <div class="pmw-detail-grid">
       <div class="pmw-metric"><b>${c.alt} m</b><span>Altitude sommet</span></div>
-      <div class="pmw-metric"><b>${c.note ? c.note.toFixed(1) : "–"} / 5</b><span>Note motards</span></div>
       <div class="pmw-metric"><b>${c.etat === "bon" ? "Bon" : "Vigilance"}</b><span>État revêtement</span></div>
+      <div class="pmw-metric"><b>${c.massif.split(" / ")[0]}</b><span>Massif</span></div>
     </div>
+
+    <div class="pmw-rating-host" id="pmw-rating-host"></div>
 
     <div class="pmw-detail-text">
       <p>${c.desc}</p>
@@ -203,15 +205,23 @@ function openDetail(i) {
     render();
   });
 
-  document.getElementById("pmw-ridden-btn").addEventListener("click", () => {
-    toggleRidden(c.nom);
-    openDetail(i); // re-render detail with updated state
+  document.getElementById("pmw-ridden-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    await toggleRidden(c.nom);
+    btn.disabled = false;
+    openDetail(i);          // ré-affiche la fiche avec le nouvel état
     render();
     renderBadges();
-    renderRanking();
   });
 
   loadWeather(c.lat, c.lon);
+
+  // widget de notation communautaire (module Firebase)
+  const ratingHost = document.getElementById("pmw-rating-host");
+  if (ratingHost && window.PyrolosRating) {
+    window.PyrolosRating.mount(ratingHost, c);
+  }
 
   render();
   detailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -253,22 +263,34 @@ async function loadWeather(lat, lon) {
   }
 }
 
-/* ---------- Suivi "cols roulés" (localStorage) ---------- */
+/* ---------- Suivi "cols roulés" ----------
+   Délégué à window.PyrolosRidden (module Firebase) :
+   Firestore quand l'utilisateur est connecté, localStorage sinon.
+   Les fonctions ci-dessous servent de façade synchrone pour le rendu. */
 
 function getRidden() {
-  try {
-    const raw = localStorage.getItem(RIDDEN_KEY);
-    return new Set(raw ? JSON.parse(raw) : []);
-  } catch {
-    return new Set();
-  }
+  return window.PyrolosRidden ? window.PyrolosRidden.get() : new Set();
 }
 
-function toggleRidden(nom) {
-  const set = getRidden();
-  if (set.has(nom)) set.delete(nom); else set.add(nom);
-  localStorage.setItem(RIDDEN_KEY, JSON.stringify([...set]));
+async function toggleRidden(nom) {
+  if (!window.PyrolosRidden) return;
+  await window.PyrolosRidden.toggle(nom);
 }
+
+/** Rafraîchit tout l'affichage dépendant des cols roulés.
+    Appelé par le module Firebase après connexion/déconnexion. */
+window.pyrolosRefreshRidden = function () {
+  render();
+  renderBadges();
+  if (selectedIndex !== null) {
+    const btn = document.getElementById("pmw-ridden-btn");
+    if (btn) {
+      const isRidden = getRidden().has(COLS[selectedIndex].nom);
+      btn.classList.toggle("on", isRidden);
+      btn.textContent = isRidden ? "✅ Roulé" : "☐ Marquer comme roulé";
+    }
+  }
+};
 
 /* ---------- Classement (vue Classement) ---------- */
 

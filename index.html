@@ -50,6 +50,13 @@
 
 
 
+  <!-- ============ BARRE DE COMPTE ============ -->
+  <div class="pmw-account" id="pmw-account">
+    <span class="pmw-account-state" id="pmw-account-state">Non connecté</span>
+    <button class="pmw-btn pmw-btn-ghost" id="pmw-login-btn">Se connecter</button>
+    <button class="pmw-btn pmw-btn-ghost" id="pmw-logout-btn" hidden>Se déconnecter</button>
+  </div>
+
   <!-- ============ NAVIGATION PAR ONGLETS ============ -->
   <nav class="pmw-tabs">
     <button class="pmw-tab active" data-view="carte">Carte</button>
@@ -98,7 +105,8 @@
   <section class="pmw-view" id="view-succes" hidden>
     <div class="pmw-section-head">
       <h2>Succès</h2>
-      <p class="pmw-section-sub">Coche les cols que tu as roulés depuis leurs fiches pour débloquer des succès. Sauvegardé uniquement sur cet appareil.</p>
+      <p class="pmw-section-sub">Coche les cols que tu as roulés depuis leurs fiches pour débloquer des succès.</p>
+      <p class="pmw-section-note" id="pmw-ridden-scope">Sauvegardé sur cet appareil uniquement — connecte-toi pour retrouver ta progression partout.</p>
     </div>
     <div class="pmw-badges" id="pmw-badges"></div>
     <div class="pmw-progress-wrap">
@@ -107,10 +115,61 @@
     </div>
   </section>
 
+  <!-- ============ MODALE DE CONNEXION ============ -->
+  <div class="pmw-modal" id="pmw-modal" hidden>
+    <div class="pmw-modal-backdrop" data-close></div>
+    <div class="pmw-modal-box" role="dialog" aria-modal="true" aria-labelledby="pmw-modal-title">
+      <button class="pmw-modal-close" data-close aria-label="Fermer">&times;</button>
+
+      <h2 class="pmw-modal-title" id="pmw-modal-title">Connexion</h2>
+      <p class="pmw-modal-sub" id="pmw-modal-sub">Connecte-toi avec ton pseudo pour noter les cols.</p>
+
+      <div class="pmw-field">
+        <label for="pmw-pseudo">Pseudo</label>
+        <input type="text" id="pmw-pseudo" autocomplete="username" placeholder="Ton pseudo de motard">
+        <small class="pmw-hint" id="pmw-pseudo-hint" hidden>3 à 20 caractères : lettres, chiffres, . _ -</small>
+      </div>
+
+      <div class="pmw-field">
+        <label for="pmw-password">Mot de passe</label>
+        <input type="password" id="pmw-password" autocomplete="current-password" placeholder="6 caractères minimum">
+      </div>
+
+      <div class="pmw-warn" id="pmw-warn" hidden>
+        <strong>Note bien ton mot de passe quelque part.</strong>
+        Aucune adresse e-mail n'est demandée, donc aucun lien de
+        réinitialisation ne peut t'être envoyé : un mot de passe oublié
+        signifie un compte définitivement perdu.
+      </div>
+
+      <div class="pmw-modal-error" id="pmw-modal-error" hidden></div>
+
+      <button class="pmw-btn pmw-btn-primary pmw-btn-full" id="pmw-submit">Se connecter</button>
+
+      <div class="pmw-modal-links">
+        <button class="pmw-link" id="pmw-toggle-mode">Pas encore de compte ? S'inscrire</button>
+        <button class="pmw-link" id="pmw-forgot">Mot de passe oublié ?</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ POPUP "MOT DE PASSE OUBLIÉ" ============ -->
+  <div class="pmw-modal" id="pmw-lost" hidden>
+    <div class="pmw-modal-backdrop" data-lost-close></div>
+    <div class="pmw-modal-box pmw-lost-box" role="alertdialog" aria-modal="true" aria-labelledby="pmw-lost-title">
+      <button class="pmw-modal-close" data-lost-close aria-label="Fermer">&times;</button>
+      <div class="pmw-lost-emoji" aria-hidden="true">🏍️💨</div>
+      <h2 class="pmw-modal-title" id="pmw-lost-title"></h2>
+      <p class="pmw-lost-text" id="pmw-lost-text"></p>
+      <button class="pmw-btn pmw-btn-primary pmw-btn-full" data-lost-close>C'est noté…</button>
+    </div>
+  </div>
+
   <footer class="pmw-footer">Pyrolos · données d'exemple · altitudes, notes et coordonnées indicatives · vérifie toujours l'état des routes et la météo avant de partir</footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="script.js"></script>
+<script type="module" src="app-firebase.js"></script>
 </body>
 </html>

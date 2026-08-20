@@ -352,3 +352,125 @@ body{
 }
 .pmw-ridden-toggle:hover{ border-color:var(--sage); }
 .pmw-ridden-toggle.on{ background:var(--sage); border-color:var(--sage); color:#16210f; }
+
+/* ---------- BARRE DE COMPTE ---------- */
+.pmw-account{
+  display:flex; align-items:center; gap:12px; justify-content:flex-end;
+  padding:10px 32px; background:var(--night-950);
+  border-bottom:1px solid var(--line);
+}
+.pmw-account-state{ font-size:12.5px; color:var(--text-muted); }
+.pmw-account-state.connected{ color:var(--sage); font-weight:600; }
+
+/* ---------- BOUTONS ---------- */
+.pmw-btn{
+  font-family:'Work Sans',sans-serif; font-weight:600; font-size:12.5px;
+  padding:8px 16px; border-radius:20px; cursor:pointer; transition:.15s;
+  border:1px solid var(--line); background:transparent; color:var(--text-muted);
+}
+.pmw-btn-ghost:hover{ border-color:var(--sage); color:var(--text-primary); }
+.pmw-btn-primary{
+  background:var(--sage); border-color:var(--sage); color:#16210f;
+}
+.pmw-btn-primary:hover{ filter:brightness(1.08); }
+.pmw-btn-primary:disabled{ opacity:.6; cursor:default; }
+.pmw-btn-full{ width:100%; padding:12px; font-size:14px; margin-top:4px; }
+
+.pmw-link{
+  background:none; border:0; padding:0; cursor:pointer;
+  font-family:'Work Sans',sans-serif; font-size:12.5px;
+  color:var(--slate-blue); text-decoration:underline; text-underline-offset:3px;
+}
+.pmw-link:hover{ color:var(--sage); }
+
+/* ---------- MODALE ---------- */
+.pmw-modal{ position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center; }
+.pmw-modal[hidden]{ display:none; }
+.pmw-modal-backdrop{ position:absolute; inset:0; background:rgba(8,11,13,.78); backdrop-filter:blur(3px); }
+.pmw-modal-box{
+  position:relative; z-index:1; width:min(92vw, 400px);
+  background:var(--night-900); border:1px solid var(--line); border-radius:14px;
+  padding:30px 28px 26px; box-shadow:0 24px 60px rgba(0,0,0,.5);
+}
+.pmw-modal-close{
+  position:absolute; top:12px; right:16px; background:none; border:0;
+  color:var(--text-muted); font-size:26px; line-height:1; cursor:pointer;
+}
+.pmw-modal-close:hover{ color:var(--text-primary); }
+.pmw-modal-title{ font-family:'Fraunces',serif; font-size:24px; font-weight:600; color:var(--text-primary); margin:0 0 6px; }
+.pmw-modal-sub{ font-size:13px; color:var(--text-muted); margin:0 0 22px; line-height:1.5; }
+
+.pmw-field{ margin-bottom:15px; }
+.pmw-field label{
+  display:block; font-size:11.5px; font-weight:600; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;
+}
+.pmw-field input{
+  width:100%; padding:11px 14px; border-radius:8px; font-size:14px;
+  background:var(--night-950); border:1px solid var(--line);
+  color:var(--text-primary); font-family:'Work Sans',sans-serif;
+}
+.pmw-field input:focus{ outline:none; border-color:var(--sage); }
+
+.pmw-modal-error{
+  background:rgba(180,70,60,.14); border:1px solid rgba(190,90,80,.5);
+  color:#e8a79f; font-size:12.5px; border-radius:8px; padding:10px 12px; margin-bottom:14px;
+}
+.pmw-modal-links{ display:flex; flex-direction:column; gap:9px; margin-top:18px; align-items:flex-start; }
+
+/* ---------- NOTATION ---------- */
+.pmw-rating-host{ margin:4px 0 20px; }
+.pmw-rating{
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  background:var(--night-950); border:1px solid var(--line);
+  border-radius:10px; padding:16px 20px;
+}
+.pmw-rating-loading{ font-size:12.5px; color:var(--text-muted); padding:16px 20px; }
+.pmw-rating-avg b{ font-family:'Fraunces',serif; font-size:26px; font-weight:600; color:var(--terracotta); }
+.pmw-rating-avg span{ font-size:12px; color:var(--text-muted); margin-left:2px; }
+.pmw-rating-avg em{ display:block; font-style:normal; font-size:11px; color:var(--text-muted); margin-top:2px; }
+.pmw-rating-stars{ display:flex; gap:3px; }
+.pmw-star{
+  background:none; border:0; cursor:pointer; font-size:26px; line-height:1;
+  color:var(--line); padding:0 2px; transition:.12s;
+}
+.pmw-star:hover:not(:disabled), .pmw-star.on{ color:var(--terracotta); }
+.pmw-star:disabled{ cursor:default; opacity:.45; }
+.pmw-rating-stars:hover .pmw-star:not(:disabled){ color:var(--terracotta); }
+.pmw-rating-stars .pmw-star:hover ~ .pmw-star{ color:var(--line); }
+.pmw-rating-msg{ font-size:12.5px; color:var(--text-muted); }
+
+@media (max-width:640px){
+  .pmw-account{ padding:10px 20px; }
+  .pmw-rating{ gap:12px; padding:14px 16px; }
+}
+
+/* indice sous le champ pseudo */
+.pmw-hint{
+  display:block; margin-top:6px; font-size:11px; color:var(--text-muted); line-height:1.4;
+}
+
+/* avertissement "pas de récupération de mot de passe" */
+.pmw-warn{
+  background:rgba(201,138,85,.14); border:1px solid rgba(201,138,85,.55);
+  color:#e0b48a; font-size:12.5px; line-height:1.55;
+  border-radius:8px; padding:12px 14px; margin-bottom:16px;
+}
+
+.pmw-warn strong{ display:block; margin-bottom:3px; color:var(--terracotta); }
+
+/* ---------- POPUP "MOT DE PASSE OUBLIÉ" ---------- */
+.pmw-lost-box{ text-align:center; }
+.pmw-lost-emoji{ font-size:42px; line-height:1; margin:4px 0 14px; }
+.pmw-lost-box .pmw-modal-title{ color:var(--terracotta); margin-bottom:12px; }
+.pmw-lost-text{
+  font-size:13.5px; line-height:1.6; color:var(--text-primary);
+  margin:0 0 22px;
+}
+
+/* précision sur la portée de la sauvegarde des succès */
+.pmw-section-note{
+  margin:0; font-size:12px; line-height:1.5; color:var(--text-muted);
+  padding-left:11px; border-left:2px solid var(--line); max-width:520px;
+}
+.pmw-section-note.synced{ border-left-color:var(--sage); color:var(--sage); }
