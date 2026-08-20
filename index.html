@@ -92,6 +92,12 @@
   <!-- ============ VUE ITINÉRAIRES ============ -->
   <section class="pmw-view" id="view-itineraires" hidden>
 
+    <div class="pmw-section-head" id="pmw-mine-head" hidden>
+      <h2>Mes itinéraires</h2>
+      <p class="pmw-section-sub">Tes parcours enregistrés, visibles uniquement par toi.</p>
+    </div>
+    <div class="pmw-routes" id="pmw-my-routes" hidden></div>
+
     <div class="pmw-section-head">
       <h2>Itinéraires prêts à rouler</h2>
       <p class="pmw-section-sub">Des parcours sélectionnés, à ouvrir directement dans Google Maps pour la navigation.</p>
@@ -163,6 +169,13 @@
 
         <div class="pmw-result" id="pmw-result" hidden>
           <div class="pmw-result-stats" id="pmw-result-stats"></div>
+          <div class="pmw-save" id="pmw-save-box">
+            <input type="text" id="pmw-save-name" maxlength="80" placeholder="Nom de l'itinéraire">
+            <input type="text" id="pmw-save-desc" maxlength="200" placeholder="Description (facultatif)">
+            <button class="pmw-btn pmw-btn-primary pmw-btn-sm" id="pmw-save-trip">💾 Enregistrer</button>
+            <p class="pmw-save-hint" id="pmw-save-hint"></p>
+          </div>
+
           <div class="pmw-result-actions">
             <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" id="pmw-gpx">⬇ Télécharger le GPX</button>
             <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" id="pmw-open-maps">🗺 Ouvrir dans Google Maps</button>

@@ -456,8 +456,20 @@ function renderRoutes() {
         ? `<div class="pmw-route-cols">${r.cols.map(c => `<span>${c}</span>`).join("")}</div>`
         : ""}
       <span class="pmw-route-cta">Ouvrir dans Google Maps →</span>
+      ${r.gpx ? `<span class="pmw-route-gpx" data-gpx="${r.gpx}">⬇ GPX</span>` : ""}
     </a>
   `).join("");
+
+  // le badge GPX déclenche le téléchargement sans suivre le lien de la carte
+  host.querySelectorAll("[data-gpx]").forEach(el =>
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const a = document.createElement("a");
+      a.href = el.dataset.gpx;
+      a.download = "";
+      a.click();
+    }));
 }
 
 /* ---------- Créateur de parcours ----------
@@ -542,6 +554,7 @@ function initBuilder() {
     }));
 
   document.getElementById("pmw-trace").addEventListener("click", traceRoute);
+  document.getElementById("pmw-save-trip").addEventListener("click", saveTrip);
   document.getElementById("pmw-gpx").addEventListener("click", downloadGPX);
   document.getElementById("pmw-open-maps").addEventListener("click", openInGoogleMaps);
   document.getElementById("pmw-clear-route").addEventListener("click", () => {
@@ -765,6 +778,146 @@ function renderBuilder() {
   const ready = waypoints().length >= 2;
   document.getElementById("pmw-trace").disabled = !ready;
 }
+
+/* ---------- Itinéraires personnels ---------- */
+
+async function saveTrip() {
+  const hint = document.getElementById("pmw-save-hint");
+  const nameEl = document.getElementById("pmw-save-name");
+  const descEl = document.getElementById("pmw-save-desc");
+  const btn = document.getElementById("pmw-save-trip");
+
+  if (!window.PyrolosTrips) return;
+  if (!window.PyrolosTrips.isSignedIn()) {
+    hint.textContent = "Connecte-toi pour enregistrer un itinéraire.";
+    hint.className = "pmw-save-hint ko";
+    return;
+  }
+  if (!trip.route) {
+    hint.textContent = "Trace d'abord l'itinéraire.";
+    hint.className = "pmw-save-hint ko";
+    return;
+  }
+  const nom = nameEl.value.trim();
+  if (!nom) {
+    hint.textContent = "Donne un nom à ton itinéraire.";
+    hint.className = "pmw-save-hint ko";
+    nameEl.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  hint.textContent = "Enregistrement…";
+  hint.className = "pmw-save-hint";
+  try {
+    await window.PyrolosTrips.save({
+      nom,
+      desc: descEl.value.trim(),
+      mode: trip.mode,
+      start: trip.start,
+      end: trip.end,
+      via: trip.via,
+      cols: trip.cols,
+      distance: trip.route.distance,
+      duration: trip.route.duration,
+      dplus: trip.route.denivele ? trip.route.denivele.dplus : 0
+    });
+    nameEl.value = ""; descEl.value = "";
+    hint.textContent = "✓ Itinéraire enregistré.";
+    hint.className = "pmw-save-hint ok";
+    await renderMyTrips();
+  } catch (err) {
+    console.error(err);
+    hint.textContent = "Enregistrement impossible.";
+    hint.className = "pmw-save-hint ko";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/** Affiche la liste des itinéraires personnels (rien si non connecté). */
+async function renderMyTrips() {
+  const head = document.getElementById("pmw-mine-head");
+  const host = document.getElementById("pmw-my-routes");
+  if (!host || !window.PyrolosTrips) return;
+
+  if (!window.PyrolosTrips.isSignedIn()) {
+    head.hidden = true; host.hidden = true; host.innerHTML = "";
+    return;
+  }
+
+  const trips = await window.PyrolosTrips.list();
+  head.hidden = false;
+  host.hidden = false;
+
+  if (!trips.length) {
+    host.innerHTML = `<div class="pmw-empty">Aucun itinéraire enregistré. Compose ton parcours plus bas, puis clique sur « Enregistrer ».</div>`;
+    return;
+  }
+
+  host.innerHTML = trips.map(t => `
+    <div class="pmw-route pmw-route-mine">
+      <div class="pmw-route-head">
+        <h3>${escapeHtml(t.nom)}</h3>
+        <span class="pmw-route-diff">${t.mode || ""}</span>
+      </div>
+      <div class="pmw-route-meta">
+        ${t.distance ? `<span>📏 ${Math.round(t.distance / 1000)} km</span>` : ""}
+        ${t.duration ? `<span>🕒 ${formatDuration(t.duration)}</span>` : ""}
+        ${t.dplus ? `<span>⛰️ ${t.dplus} m D+</span>` : ""}
+      </div>
+      ${t.desc ? `<p class="pmw-route-desc">${escapeHtml(t.desc)}</p>` : ""}
+      ${(t.cols || []).length
+        ? `<div class="pmw-route-cols">${t.cols.map(c => `<span>${escapeHtml(c)}</span>`).join("")}</div>` : ""}
+      <div class="pmw-route-mine-actions">
+        <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" data-load="${t.id}">↺ Recharger</button>
+        <button class="pmw-link" data-del-trip="${t.id}">Supprimer</button>
+      </div>
+    </div>
+  `).join("");
+
+  host.querySelectorAll("[data-load]").forEach(b =>
+    b.addEventListener("click", () => loadTrip(trips.find(t => t.id === b.dataset.load))));
+
+  host.querySelectorAll("[data-del-trip]").forEach(b =>
+    b.addEventListener("click", async () => {
+      b.textContent = "…";
+      await window.PyrolosTrips.remove(b.dataset.delTrip);
+      await renderMyTrips();
+    }));
+}
+
+/** Recharge un itinéraire enregistré dans le créateur et le retrace. */
+function loadTrip(t) {
+  if (!t) return;
+  trip.start = t.start || null;
+  trip.end   = t.end || null;
+  trip.via   = t.via || [];
+  trip.cols  = t.cols || [];
+  trip.mode  = t.mode || "boucle";
+  trip.route = null;
+
+  document.querySelectorAll(".pmw-mode").forEach(x =>
+    x.classList.toggle("active", x.dataset.mode === trip.mode));
+  document.getElementById("pmw-end-row").hidden = trip.mode !== "point";
+
+  renderBuilder();
+  document.querySelector(".pmw-builder").scrollIntoView({ behavior: "smooth", block: "start" });
+  traceRoute();
+}
+
+function formatDuration(sec) {
+  const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+  return h ? `${h} h ${String(m).padStart(2, "0")}` : `${m} min`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[<>&"']/g, c =>
+    ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// appelé par le module Firebase à chaque connexion / déconnexion
+window.pyrolosRefreshTrips = renderMyTrips;
 
 /* ---------- Export GPX ---------- */
 

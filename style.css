@@ -635,3 +635,33 @@ body{
 }
 .pmw-result-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .pmw-builder-note{ font-size:10.5px; line-height:1.5; color:var(--text-muted); margin:14px 0 0; }
+
+/* badge de téléchargement GPX sur une carte d'itinéraire */
+.pmw-route-gpx{
+  margin-left:12px; font-size:11.5px; font-weight:600;
+  color:var(--sage); border:1px solid rgba(131,163,116,.45);
+  border-radius:12px; padding:3px 10px; cursor:pointer; transition:.15s;
+}
+.pmw-route-gpx:hover{ background:var(--sage); color:#16210f; }
+
+/* ---------- ENREGISTREMENT D'UN ITINÉRAIRE ---------- */
+.pmw-save{
+  display:flex; flex-direction:column; gap:8px;
+  background:var(--night-950); border:1px solid var(--line);
+  border-radius:10px; padding:14px; margin-bottom:14px;
+}
+.pmw-save input{
+  width:100%; padding:9px 12px; border-radius:8px; font-size:13px;
+  background:var(--night-900); border:1px solid var(--line);
+  color:var(--text-primary); font-family:'Work Sans',sans-serif;
+}
+.pmw-save input:focus{ outline:none; border-color:var(--sage); }
+.pmw-save .pmw-btn{ align-self:flex-start; }
+.pmw-save-hint{ font-size:11.5px; margin:0; color:var(--text-muted); min-height:14px; }
+.pmw-save-hint.ok{ color:var(--sage); font-weight:600; }
+.pmw-save-hint.ko{ color:#e0a08a; }
+
+/* cartes des itinéraires personnels */
+.pmw-route-mine{ cursor:default; border-left:3px solid var(--sage); }
+.pmw-route-mine:hover{ transform:none; }
+.pmw-route-mine-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }

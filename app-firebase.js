@@ -3,7 +3,7 @@
 //  Fait le lien entre pyrolos-firebase.js et le DOM.
 // =============================================================
 
-import { Auth, Ratings, Ridden, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
+import { Auth, Ratings, Ridden, Trips, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
 
 const $ = id => document.getElementById(id);
 
@@ -52,6 +52,9 @@ Auth.onChange(async user => {
     scope.classList.toggle("synced", !!user);
   }
   if (window.pyrolosRefreshRidden) window.pyrolosRefreshRidden();
+
+  // recharger les itinéraires personnels
+  if (window.pyrolosRefreshTrips) await window.pyrolosRefreshTrips();
 
   // rafraîchir le widget de notation si une fiche est ouverte
   const open = document.querySelector("[data-rating-col]");
@@ -315,6 +318,12 @@ export async function mountRating(host, col) {
 // exposés pour script.js, qui n'est pas un module
 window.PyrolosRating = { mount: mountRating, openLogin: () => openModal("login") };
 window.PyrolosRidden = Ridden;
+window.PyrolosTrips = {
+  isSignedIn: () => !!Auth.current,
+  list:   () => Trips.list(),
+  save:   d  => Trips.save(d),
+  remove: id => Trips.remove(id)
+};
 
 // premier chargement (utilisateur non connecté : stockage local)
 Ridden.load().then(() => {

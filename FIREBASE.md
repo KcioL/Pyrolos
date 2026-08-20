@@ -93,6 +93,12 @@ automatiquement, sans configuration.
 adresse IP. Seuls existent un pseudo, un mot de passe haché par Firebase, des
 notes de 1 à 5, et la liste des cols roulés.
 
+**Itinéraires personnels** — rangés dans `users/{uid}/trips/`, strictement
+privés : les règles n'autorisent l'accès qu'au propriétaire du compte. Seuls
+les points du parcours sont enregistrés (départ, cols, passages, mode), pas le
+tracé complet — quelques centaines d'octets par itinéraire, recalculés par
+OSRM au chargement.
+
 **Cols roulés (succès)** — rangés dans `users/{uid}`, lisibles et modifiables
 par leur seul propriétaire. Personne ne peut consulter la progression d'un
 autre. Sans compte, la liste reste en `localStorage`, sur l'appareil ; à la

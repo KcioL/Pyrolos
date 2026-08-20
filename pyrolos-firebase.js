@@ -9,8 +9,8 @@ import {
   signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  getFirestore, doc, setDoc, deleteDoc, getDoc,
-  collection, getDocs, serverTimestamp
+  getFirestore, doc, setDoc, deleteDoc, getDoc, addDoc,
+  collection, getDocs, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { firebaseConfig } from "./firebase-config.js";
@@ -329,4 +329,68 @@ export const Ridden = {
   },
 
   reset() { riddenCache = null; }
+};
+
+
+/* ============================================================
+   ITINÉRAIRES PERSONNELS
+   Modèle : users/{uid}/trips/{tripId}
+
+   Sous-collection privée : les règles Firestore n'autorisent la
+   lecture et l'écriture qu'au propriétaire du document parent.
+   Personne d'autre ne voit ces parcours.
+
+   On enregistre les POINTS du parcours (départ, cols, passages,
+   mode) et non le tracé complet : quelques centaines d'octets au
+   lieu de dizaines de Ko. Le tracé est recalculé par OSRM au
+   moment du chargement.
+   ============================================================ */
+
+export const Trips = {
+  /** Itinéraires de l'utilisateur connecté, du plus récent au plus ancien. */
+  async list() {
+    const user = Auth.current;
+    if (!user) return [];
+    try {
+      const q = query(collection(db, "users", user.uid, "trips"),
+                      orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.error("Lecture des itinéraires impossible :", err);
+      return [];
+    }
+  },
+
+  /** Enregistre un nouvel itinéraire. `data` doit rester léger. */
+  async save(data) {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+
+    const nom = (data.nom || "").trim().slice(0, 80);
+    if (!nom) throw new Error("no-name");
+
+    const payload = {
+      nom,
+      desc: (data.desc || "").trim().slice(0, 500),
+      mode: data.mode || "boucle",
+      start: data.start || null,
+      end: data.end || null,
+      via: (data.via || []).slice(0, 20),
+      cols: (data.cols || []).slice(0, 20),
+      distance: Math.round(data.distance || 0),   // mètres
+      duration: Math.round(data.duration || 0),   // secondes
+      dplus: Math.round(data.dplus || 0),         // mètres
+      createdAt: serverTimestamp()
+    };
+
+    const ref = await addDoc(collection(db, "users", user.uid, "trips"), payload);
+    return ref.id;
+  },
+
+  async remove(id) {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+    await deleteDoc(doc(db, "users", user.uid, "trips", id));
+  }
 };
