@@ -1283,6 +1283,39 @@ function renderRiders() {
     : `${n} autres motards sur la ligne de départ.`;
 }
 
+/** Coche / décoche un style, dans la limite de MAX_STYLES. */
+function toggleCardStyle(id) {
+  const hint = document.getElementById("pmw-style-hint");
+  const i = cardStyles.indexOf(id);
+
+  if (i !== -1) {
+    cardStyles.splice(i, 1);
+  } else if (cardStyles.length >= MAX_STYLES) {
+    hint.textContent = `3 styles maximum — décoche-en un avant d'en ajouter un autre.`;
+    hint.classList.add("ko");
+    setTimeout(() => {
+      hint.textContent = "Sélectionne 1 à 3 styles.";
+      hint.classList.remove("ko");
+    }, 2200);
+    return;
+  } else {
+    cardStyles.push(id);
+  }
+  renderStylePicker();
+}
+
+function renderStylePicker() {
+  document.querySelectorAll(".pmw-style-opt").forEach(b =>
+    b.classList.toggle("on", cardStyles.includes(b.dataset.style)));
+  const hint = document.getElementById("pmw-style-hint");
+  if (!hint) return;
+  if (!hint.classList.contains("ko")) {
+    hint.textContent = cardStyles.length
+      ? `${cardStyles.length} / ${MAX_STYLES} sélectionné${cardStyles.length > 1 ? "s" : ""}`
+      : "Sélectionne 1 à 3 styles.";
+  }
+}
+
 async function openCardModal() {
   const modal = document.getElementById("pmw-card-modal");
   const err = document.getElementById("pmw-card-error");
