@@ -341,7 +341,7 @@
 
       <div class="pmw-field">
         <label for="pmw-card-desc">Quelques mots <span class="pmw-optional-tag">facultatif</span></label>
-        <textarea id="pmw-card-desc" maxlength="300" rows="3" placeholder="Ce que tu cherches, ton expérience…"></textarea>
+        <textarea id="pmw-card-desc" maxlength="300" rows="2" placeholder="Ce que tu cherches, ton expérience…"></textarea>
       </div>
 
       <div class="pmw-field">
@@ -357,7 +357,10 @@
 
       <div class="pmw-modal-error" id="pmw-card-error" hidden></div>
 
-      <button class="pmw-btn pmw-btn-primary pmw-btn-full" id="pmw-card-save">Publier ma fiche</button>
+      <div class="pmw-modal-actions">
+        <button class="pmw-btn-cancel" data-card-close>Annuler</button>
+        <button class="pmw-btn pmw-btn-primary" id="pmw-card-save">Publier ma fiche</button>
+      </div>
       <div class="pmw-modal-links">
         <button class="pmw-link" id="pmw-card-delete" hidden>Retirer ma fiche</button>
       </div>

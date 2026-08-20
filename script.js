@@ -1170,6 +1170,10 @@ function initRiders() {
   modal.addEventListener("click", e => {
     if (e.target.hasAttribute("data-card-close")) modal.hidden = true;
   });
+  // Échap ferme aussi la fenêtre : on ne doit jamais s'y sentir coincé
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && !modal.hidden) modal.hidden = true;
+  });
 
   loadRiders();
 }
