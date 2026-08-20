@@ -474,3 +474,21 @@ body{
   padding-left:11px; border-left:2px solid var(--line); max-width:520px;
 }
 .pmw-section-note.synced{ border-left-color:var(--sage); color:var(--sage); }
+
+/* bouton "afficher le mot de passe" */
+.pmw-reveal{
+  margin-top:7px; padding:0; background:none; border:0; cursor:pointer;
+  font-family:'Work Sans',sans-serif; font-size:11.5px;
+  color:var(--slate-blue); text-decoration:underline; text-underline-offset:3px;
+}
+.pmw-reveal:hover{ color:var(--sage); }
+
+/* retour visuel sur la concordance des mots de passe */
+.pmw-match{
+  display:block; margin-top:7px; font-size:11.5px; font-weight:600; line-height:1.4;
+}
+.pmw-match.ok{ color:var(--sage); }
+.pmw-match.ko{ color:#e0a08a; }
+
+/* cadenas des succès non débloqués */
+.pmw-badge:not(.unlocked) .pmw-badge-icon{ font-size:15px; opacity:.7; }

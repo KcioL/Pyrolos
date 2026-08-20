@@ -3,7 +3,7 @@
 //  Fait le lien entre pyrolos-firebase.js et le DOM.
 // =============================================================
 
-import { Auth, Ratings, Ridden, colId, authErrorMessage, validatePseudo } from "./pyrolos-firebase.js";
+import { Auth, Ratings, Ridden, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
 
 const $ = id => document.getElementById(id);
 
@@ -28,7 +28,7 @@ const logoutBtn= $("pmw-logout-btn");
 
 Auth.onChange(async user => {
   if (user) {
-    stateEl.textContent = user.displayName || user.email;
+    stateEl.textContent = displayNameOf(user);
     stateEl.classList.add("connected");
     loginBtn.hidden = true;
     logoutBtn.hidden = false;
@@ -68,6 +68,10 @@ const titleEl  = $("pmw-modal-title");
 const subEl    = $("pmw-modal-sub");
 const errorEl  = $("pmw-modal-error");
 const passEl   = $("pmw-password");
+const confirmEl= $("pmw-confirm");
+const confirmField = $("pmw-confirm-field");
+const matchEl  = $("pmw-match");
+const revealEl = $("pmw-reveal");
 const pseudoEl = $("pmw-pseudo");
 const hintEl   = $("pmw-pseudo-hint");
 const warnEl   = $("pmw-warn");
@@ -89,6 +93,36 @@ function openModal(m) {
 function closeModal() {
   modal.hidden = true;
   passEl.value = "";
+  confirmEl.value = "";
+  matchEl.hidden = true;
+  setRevealed(false);
+}
+
+/* Basculer l'affichage en clair des deux champs de mot de passe.
+   Utile à l'inscription : permet de relire ce qu'on a tapé plutôt
+   que de deviner sous les points. */
+let revealed = false;
+function setRevealed(on) {
+  revealed = on;
+  const type = on ? "text" : "password";
+  passEl.type = type;
+  confirmEl.type = type;
+  revealEl.textContent = on ? "Masquer le mot de passe" : "Afficher le mot de passe";
+}
+
+/* Retour visuel en direct sur la concordance des deux saisies. */
+function checkMatch() {
+  if (mode !== "signup" || !confirmEl.value) {
+    matchEl.hidden = true;
+    return;
+  }
+  const same = passEl.value === confirmEl.value;
+  matchEl.hidden = false;
+  matchEl.textContent = same
+    ? "✓ Les mots de passe correspondent"
+    : "✗ Les mots de passe sont différents";
+  matchEl.classList.toggle("ok", same);
+  matchEl.classList.toggle("ko", !same);
 }
 
 function applyMode() {
@@ -104,6 +138,11 @@ function applyMode() {
   hintEl.hidden = !signup;
   warnEl.hidden = !signup;
   forgotBtn.hidden = signup;
+  confirmField.hidden = !signup;
+  revealEl.hidden = !signup;
+  confirmEl.value = "";
+  matchEl.hidden = true;
+  setRevealed(false);
   passEl.autocomplete = signup ? "new-password" : "current-password";
 }
 
@@ -133,13 +172,24 @@ submitBtn.addEventListener("click", async () => {
   if (mode === "signup") {
     const problem = validatePseudo(pseudo);
     if (problem) return showError(problem);
+
+    if (pass.length < 6) {
+      return showError("Le mot de passe doit faire au moins 6 caractères.");
+    }
+    if (pass !== confirmEl.value) {
+      return showError(
+        "Les deux mots de passe ne correspondent pas. " +
+        "Vérifie bien : sans e-mail, une faute de frappe rend le compte irrécupérable."
+      );
+    }
   }
 
   submitBtn.disabled = true;
   submitBtn.textContent = "…";
   try {
     if (mode === "signup") {
-      await Auth.register(pseudo, pass);
+      const u = await Auth.register(pseudo, pass);
+      stateEl.textContent = displayNameOf(u);
     } else {
       await Auth.login(pseudo, pass);
     }
@@ -152,7 +202,11 @@ submitBtn.addEventListener("click", async () => {
   }
 });
 
-[passEl, pseudoEl].forEach(el =>
+revealEl.addEventListener("click", () => setRevealed(!revealed));
+passEl.addEventListener("input", checkMatch);
+confirmEl.addEventListener("input", checkMatch);
+
+[passEl, pseudoEl, confirmEl].forEach(el =>
   el.addEventListener("keydown", e => { if (e.key === "Enter") submitBtn.click(); })
 );
 

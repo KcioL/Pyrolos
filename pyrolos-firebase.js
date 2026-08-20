@@ -90,6 +90,20 @@ function pseudoToEmail(pseudo) {
   return `${normalizePseudo(pseudo)}@${PSEUDO_DOMAIN}`;
 }
 
+/**
+ * Nom à afficher pour un utilisateur.
+ * Repli sur l'adresse interne privée de son domaine, au cas où
+ * displayName ne serait pas encore disponible.
+ */
+export function displayNameOf(user) {
+  if (!user) return "";
+  if (user.displayName) return user.displayName;
+  const mail = user.email || "";
+  return mail.endsWith("@" + PSEUDO_DOMAIN)
+    ? mail.slice(0, -(PSEUDO_DOMAIN.length + 1))
+    : mail;
+}
+
 export const Auth = {
   current: null,
 
@@ -110,7 +124,12 @@ export const Auth = {
     );
     // on conserve la casse choisie par l'utilisateur pour l'affichage
     await updateProfile(cred.user, { displayName: pseudo.trim() });
-    return cred.user;
+
+    // onAuthStateChanged s'est déclenché AVANT updateProfile : à ce
+    // moment-là displayName était encore vide. On recharge le profil
+    // pour que l'interface affiche le pseudo dès la première connexion.
+    await cred.user.reload();
+    return auth.currentUser;
   },
 
   async login(pseudo, password) {

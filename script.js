@@ -9,11 +9,68 @@ const STATE_COLOR = { bon: "#7fa96f", vigilance: "#c98a3c" };
 const RIDDEN_KEY = "pyrolos_cols_roules";
 
 const BADGES = [
-  { id: "premier",   icon: "🏁", nom: "Premier virage",        desc: "Coche ton premier col roulé.",              test: (r, cols) => r.size >= 1 },
-  { id: "cinq",       icon: "🛣️", nom: "Chasseur de cols",      desc: "5 cols roulés ou plus.",                    test: (r, cols) => r.size >= 5 },
-  { id: "sommet",     icon: "⛰️", nom: "Grand sommet",          desc: "Un col roulé au-dessus de 2000 m.",         test: (r, cols) => cols.some(c => r.has(c.nom) && c.alt >= 2000) },
-  { id: "massifs",    icon: "🗺️", nom: "Multi-massifs",         desc: "Des cols roulés dans 3 massifs différents.", test: (r, cols) => new Set(cols.filter(c => r.has(c.nom)).map(c => c.massif)).size >= 3 },
-  { id: "complet",    icon: "🏆", nom: "Collection complète",   desc: "Tous les cols de la liste, roulés.",        test: (r, cols) => cols.every(c => r.has(c.nom)) }
+  // --- progression générale ---
+  { id: "premier", icon: "🏁", nom: "Premier virage",
+    desc: "Coche ton premier col roulé.",
+    test: (r) => r.size >= 1 },
+
+  { id: "cinq", icon: "🛣️", nom: "Chasseur de cols",
+    desc: "5 cols roulés ou plus.",
+    test: (r) => r.size >= 5 },
+
+  { id: "dix", icon: "🧭", nom: "Habitué des Pyrénées",
+    desc: "10 cols roulés ou plus.",
+    test: (r) => r.size >= 10 },
+
+  { id: "complet", icon: "🏆", nom: "Collection complète",
+    desc: "Tous les cols de la liste, roulés.",
+    test: (r, cols) => cols.length > 0 && cols.every(c => r.has(c.nom)) },
+
+  // --- altitude ---
+  { id: "sommet", icon: "⛰️", nom: "Grand sommet",
+    desc: "Un col roulé au-dessus de 2000 m.",
+    test: (r, cols) => cols.some(c => r.has(c.nom) && c.alt >= 2000) },
+
+  { id: "toit", icon: "👑", nom: "Le toit des Pyrénées",
+    desc: "Rouler le col le plus haut de la liste.",
+    test: (r, cols) => {
+      if (!cols.length) return false;
+      const top = cols.reduce((a, b) => (b.alt > a.alt ? b : a));
+      return r.has(top.nom);
+    } },
+
+  { id: "cumul", icon: "📈", nom: "10 000 mètres",
+    desc: "Cumuler 10 000 m d'altitude de cols roulés.",
+    test: (r, cols) =>
+      cols.filter(c => r.has(c.nom)).reduce((s, c) => s + c.alt, 0) >= 10000 },
+
+  // --- géographie ---
+  { id: "massifs3", icon: "🗺️", nom: "Multi-massifs",
+    desc: "Des cols roulés dans 3 massifs différents.",
+    test: (r, cols) =>
+      new Set(cols.filter(c => r.has(c.nom)).map(c => c.massif)).size >= 3 },
+
+  { id: "massifsAll", icon: "🌍", nom: "D'un océan à l'autre",
+    desc: "Au moins un col roulé dans chaque massif.",
+    test: (r, cols) => {
+      const tous = new Set(cols.map(c => c.massif));
+      const faits = new Set(cols.filter(c => r.has(c.nom)).map(c => c.massif));
+      return tous.size > 0 && faits.size === tous.size;
+    } },
+
+  { id: "frontiere", icon: "🛂", nom: "Passeport tamponné",
+    desc: "Rouler un col frontalier (Andorre ou Espagne).",
+    test: (r, cols) => cols.some(c =>
+      r.has(c.nom) && /andorre|espagn|isp[ée]guy|envalira/i.test(c.massif + " " + c.nom + " " + (c.desc || ""))) },
+
+  // --- état de la route ---
+  { id: "vigilance", icon: "⚠️", nom: "Pas peur du gravillon",
+    desc: "3 cols roulés classés en vigilance.",
+    test: (r, cols) => cols.filter(c => r.has(c.nom) && c.etat === "vigilance").length >= 3 },
+
+  { id: "mythique", icon: "🐐", nom: "Le géant",
+    desc: "Rouler le Col du Tourmalet.",
+    test: (r) => r.has("Col du Tourmalet") }
 ];
 
 let COLS = [];
@@ -331,17 +388,20 @@ function renderBadges() {
   if (!badgesEl) return;
   const ridden = getRidden();
 
-  badgesEl.innerHTML = BADGES.map(b => {
-    const unlocked = b.test(ridden, COLS);
-    return `
+  // succès débloqués en premier, pour valoriser la progression
+  const evalues = BADGES.map(b => ({ b, unlocked: b.test(ridden, COLS) }));
+  evalues.sort((x, y) => Number(y.unlocked) - Number(x.unlocked));
+
+  badgesEl.innerHTML = evalues.map(({ b, unlocked }) => `
       <div class="pmw-badge ${unlocked ? "unlocked" : ""}">
-        <div class="pmw-badge-icon">${b.icon}</div>
+        <div class="pmw-badge-icon">${unlocked ? b.icon : "🔒"}</div>
         <div class="pmw-badge-text"><b>${b.nom}</b><span>${b.desc}</span></div>
       </div>
-    `;
-  }).join("");
+    `).join("");
 
-  progressTextEl.textContent = `${ridden.size} / ${COLS.length} cols roulés`;
+  const done = evalues.filter(e => e.unlocked).length;
+  progressTextEl.textContent =
+    `${ridden.size} / ${COLS.length} cols roulés · ${done} / ${BADGES.length} succès`;
   progressFillEl.style.width = `${COLS.length ? (ridden.size / COLS.length) * 100 : 0}%`;
 }
 
