@@ -785,7 +785,14 @@ function renderBuilder() {
    Données OpenStreetMap via Overpass (gratuit, sans clé).
    Chargement à la demande, sur l'emprise visible ou celle du tracé.  */
 
-const OVERPASS = "https://overpass-api.de/api/interpreter";
+// Plusieurs instances Overpass : l'API publique principale est souvent
+// saturée (504). On essaie les serveurs miroirs l'un après l'autre.
+const OVERPASS_SERVERS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.osm.ch/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter"
+];
 let fuelLayer = null;
 let fuelShown = false;
 let fuelCache = null;      // { bbox, stations }
@@ -796,6 +803,40 @@ function fuelIcon() {
     html: '<span class="pmw-fuel-mk">⛽</span>',
     iconSize: [22, 22], iconAnchor: [11, 11]
   });
+}
+
+/**
+ * Interroge Overpass en essayant les serveurs successivement.
+ * Les instances publiques renvoient fréquemment 504 (saturation) ou
+ * 429 (trop de requêtes) : on bascule alors sur le miroir suivant.
+ */
+async function queryOverpass(q, label) {
+  let lastErr;
+  for (let i = 0; i < OVERPASS_SERVERS.length; i++) {
+    if (label) label.textContent = i === 0 ? "Chargement…" : `Serveur ${i + 1}…`;
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 25000);
+      const res = await fetch(OVERPASS_SERVERS[i], {
+        method: "POST",
+        body: "data=" + encodeURIComponent(q),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        signal: ctrl.signal
+      });
+      clearTimeout(timer);
+
+      // serveur saturé ou quota atteint : on tente le suivant
+      if (res.status === 504 || res.status === 429 || res.status === 503) {
+        lastErr = new Error("serveur occupé (" + res.status + ")");
+        continue;
+      }
+      if (!res.ok) { lastErr = new Error("HTTP " + res.status); continue; }
+      return await res.json();
+    } catch (err) {
+      lastErr = err;   // délai dépassé ou réseau : serveur suivant
+    }
+  }
+  throw lastErr || new Error("aucun serveur disponible");
 }
 
 async function toggleFuel() {
@@ -828,17 +869,12 @@ async function toggleFuel() {
     if (fuelCache && fuelCache.bbox === bbox) {
       stations = fuelCache.stations;
     } else {
-      const q = `[out:json][timeout:25];
+      const q = `[out:json][timeout:20];
         (node["amenity"="fuel"](${bbox});
          way["amenity"="fuel"](${bbox}););
         out center 200;`;
-      const res = await fetch(OVERPASS, {
-        method: "POST",
-        body: "data=" + encodeURIComponent(q),
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
-      });
-      if (!res.ok) throw new Error("Overpass " + res.status);
-      const data = await res.json();
+
+      const data = await queryOverpass(q, label);
       stations = (data.elements || []).map(el => ({
         lat: el.lat ?? el.center?.lat,
         lon: el.lon ?? el.center?.lon,
@@ -868,9 +904,13 @@ async function toggleFuel() {
     btn.classList.add("on");
     label.textContent = `${stations.length} stations`;
   } catch (err) {
-    console.error("Stations indisponibles :", err);
-    label.textContent = "Indisponible";
-    setTimeout(() => { label.textContent = "Stations"; }, 2500);
+    console.warn("Stations indisponibles :", err);
+    label.textContent = "Serveurs occupés";
+    btn.title = "Le service OpenStreetMap est momentanément saturé. Réessaie dans un instant.";
+    setTimeout(() => {
+      label.textContent = "Réessayer";
+      btn.title = "Afficher les stations-service";
+    }, 2500);
   } finally {
     btn.disabled = false;
   }
