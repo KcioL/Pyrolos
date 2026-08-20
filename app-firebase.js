@@ -80,6 +80,14 @@ const toggleBtn= $("pmw-toggle-mode");
 const forgotBtn= $("pmw-forgot");
 const lostModal= $("pmw-lost");
 
+if (!confirmField) {
+  console.warn(
+    "[Pyrolos] Le champ de confirmation du mot de passe est absent de index.html. " +
+    "La connexion fonctionne, mais pense à reprendre la dernière version " +
+    "d'index.html et de style.css."
+  );
+}
+
 let mode = "login";
 let revealed = false;
 
@@ -94,8 +102,8 @@ function openModal(m) {
 function closeModal() {
   modal.hidden = true;
   passEl.value = "";
-  confirmEl.value = "";
-  matchEl.hidden = true;
+  if (confirmEl) confirmEl.value = "";
+  if (matchEl)   matchEl.hidden = true;
   setRevealed(false);
 }
 
@@ -105,13 +113,15 @@ function closeModal() {
 function setRevealed(on) {
   revealed = on;
   const type = on ? "text" : "password";
-  passEl.type = type;
-  confirmEl.type = type;
-  revealEl.textContent = on ? "Masquer le mot de passe" : "Afficher le mot de passe";
+  if (passEl)    passEl.type = type;
+  if (confirmEl) confirmEl.type = type;
+  if (revealEl)  revealEl.textContent = on ? "Masquer le mot de passe"
+                                           : "Afficher le mot de passe";
 }
 
 /* Retour visuel en direct sur la concordance des deux saisies. */
 function checkMatch() {
+  if (!confirmEl || !matchEl) return;
   if (mode !== "signup" || !confirmEl.value) {
     matchEl.hidden = true;
     return;
@@ -135,13 +145,16 @@ function applyMode() {
   toggleBtn.textContent = signup
     ? "Déjà un compte ? Se connecter"
     : "Pas encore de compte ? S'inscrire";
-  hintEl.hidden = !signup;
-  warnEl.hidden = !signup;
-  forgotBtn.hidden = signup;
-  confirmField.hidden = !signup;
-  revealEl.hidden = !signup;
-  confirmEl.value = "";
-  matchEl.hidden = true;
+  // Éléments optionnels : le module doit rester fonctionnel même si
+  // l'index.html n'a pas encore été mis à jour (sinon une seule balise
+  // manquante ferait planter toute l'ouverture de la fenêtre).
+  if (hintEl)      hintEl.hidden      = !signup;
+  if (warnEl)      warnEl.hidden      = !signup;
+  if (forgotBtn)   forgotBtn.hidden   = signup;
+  if (confirmField) confirmField.hidden = !signup;
+  if (revealEl)    revealEl.hidden    = !signup;
+  if (confirmEl)   confirmEl.value    = "";
+  if (matchEl)     matchEl.hidden     = true;
   setRevealed(false);
   passEl.autocomplete = signup ? "new-password" : "current-password";
 }
@@ -176,7 +189,7 @@ submitBtn.addEventListener("click", async () => {
     if (pass.length < 6) {
       return showError("Le mot de passe doit faire au moins 6 caractères.");
     }
-    if (pass !== confirmEl.value) {
+    if (confirmEl && pass !== confirmEl.value) {
       return showError(
         "Les deux mots de passe ne correspondent pas. " +
         "Vérifie bien : sans e-mail, une faute de frappe rend le compte irrécupérable."
@@ -202,11 +215,11 @@ submitBtn.addEventListener("click", async () => {
   }
 });
 
-revealEl.addEventListener("click", () => setRevealed(!revealed));
+if (revealEl)  revealEl.addEventListener("click", () => setRevealed(!revealed));
+if (confirmEl) confirmEl.addEventListener("input", checkMatch);
 passEl.addEventListener("input", checkMatch);
-confirmEl.addEventListener("input", checkMatch);
 
-[passEl, pseudoEl, confirmEl].forEach(el =>
+[passEl, pseudoEl, confirmEl].filter(Boolean).forEach(el =>
   el.addEventListener("keydown", e => { if (e.key === "Enter") submitBtn.click(); })
 );
 

@@ -133,6 +133,13 @@
       <div class="pmw-field">
         <label for="pmw-password">Mot de passe</label>
         <input type="password" id="pmw-password" autocomplete="current-password" placeholder="6 caractères minimum">
+        <button type="button" class="pmw-reveal" id="pmw-reveal" hidden>Afficher le mot de passe</button>
+      </div>
+
+      <div class="pmw-field" id="pmw-confirm-field" hidden>
+        <label for="pmw-confirm">Confirme ton mot de passe</label>
+        <input type="password" id="pmw-confirm" autocomplete="new-password" placeholder="Saisis-le une seconde fois">
+        <small class="pmw-match" id="pmw-match" hidden></small>
       </div>
 
       <div class="pmw-warn" id="pmw-warn" hidden>
