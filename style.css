@@ -808,3 +808,98 @@ body{
 .pmw-rider-style.s-arsouille{ background:rgba(201,86,74,.22); color:#e0857a; }
 
 @media(max-width:400px){ .pmw-style-picker{ grid-template-columns:1fr; } }
+
+/* ---------- MESSAGERIE ---------- */
+.pmw-badge-dot{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:17px; height:17px; padding:0 5px; margin-left:5px;
+  border-radius:9px; background:#c9564a; color:#fff;
+  font-size:10px; font-weight:700; vertical-align:middle;
+}
+
+.pmw-msg{
+  display:grid; grid-template-columns:1fr; gap:0;
+  margin:16px 32px 40px; border:1px solid var(--line); border-radius:12px;
+  overflow:hidden; min-height:460px;
+}
+@media(min-width:820px){ .pmw-msg{ grid-template-columns:280px 1fr; } }
+
+.pmw-msg-list{
+  background:var(--night-950); border-right:1px solid var(--line);
+  max-height:520px; overflow-y:auto; padding:10px;
+}
+.pmw-conv{
+  position:relative; display:block; width:100%; text-align:left; cursor:pointer;
+  background:transparent; border:1px solid transparent; border-radius:9px;
+  padding:11px 13px; margin-bottom:5px; transition:.14s;
+  font-family:'Work Sans',sans-serif;
+}
+.pmw-conv:hover{ background:var(--night-900); }
+.pmw-conv.on{ background:var(--night-800); border-color:var(--sage); }
+.pmw-conv-name{ display:block; font-size:13.5px; font-weight:600; color:var(--text-primary); margin-bottom:3px; }
+.pmw-conv-last{
+  display:block; font-size:11.5px; color:var(--text-muted);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.pmw-conv.unread .pmw-conv-name{ color:var(--sage); }
+.pmw-conv.unread .pmw-conv-last{ color:var(--text-primary); font-weight:500; }
+.pmw-conv-dot{
+  position:absolute; top:13px; right:11px;
+  width:8px; height:8px; border-radius:50%; background:#c9564a;
+}
+
+.pmw-msg-thread{ display:flex; flex-direction:column; background:var(--night-900); }
+.pmw-thread-head{
+  display:flex; align-items:center; gap:10px;
+  padding:13px 18px; border-bottom:1px solid var(--line);
+}
+.pmw-thread-head h3{ font-family:'Fraunces',serif; font-size:16px; font-weight:600; margin:0; color:var(--text-primary); }
+.pmw-thread-back{
+  display:none; background:none; border:0; color:var(--text-muted);
+  font-size:19px; cursor:pointer; padding:0 4px;
+}
+.pmw-thread-body{
+  flex:1; min-height:300px; max-height:400px; overflow-y:auto;
+  padding:18px; display:flex; flex-direction:column; gap:9px;
+}
+.pmw-bubble{
+  align-self:flex-start; max-width:78%;
+  background:var(--night-800); border:1px solid var(--line);
+  border-radius:12px 12px 12px 3px; padding:9px 13px;
+}
+.pmw-bubble.mine{
+  align-self:flex-end;
+  background:rgba(131,163,116,.18); border-color:rgba(131,163,116,.4);
+  border-radius:12px 12px 3px 12px;
+}
+.pmw-bubble p{ margin:0 0 3px; font-size:13px; line-height:1.5; color:var(--text-primary); white-space:pre-wrap; word-break:break-word; }
+.pmw-bubble time{ font-size:10px; color:var(--text-muted); }
+
+.pmw-thread-form{
+  display:flex; gap:9px; align-items:flex-end;
+  padding:13px 18px; border-top:1px solid var(--line);
+}
+#pmw-msg-input{
+  flex:1; resize:none; overflow-y:auto; max-height:120px;
+  padding:10px 13px; border-radius:9px; font-size:13px; line-height:1.45;
+  background:var(--night-950); border:1px solid var(--line);
+  color:var(--text-primary); font-family:'Work Sans',sans-serif;
+}
+#pmw-msg-input:focus{ outline:none; border-color:var(--sage); }
+
+.pmw-rider-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+.pmw-rider-msg{
+  display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+  font-family:'Work Sans',sans-serif; font-size:12px; font-weight:600;
+  color:var(--sage); background:transparent;
+  border:1px solid rgba(131,163,116,.45); border-radius:16px; padding:6px 13px; transition:.15s;
+}
+.pmw-rider-msg:hover{ background:rgba(131,163,116,.15); }
+
+/* sur petit écran : une seule colonne à la fois */
+@media(max-width:819px){
+  .pmw-msg{ margin:16px 20px 34px; }
+  .pmw-msg.thread-open .pmw-msg-list{ display:none; }
+  .pmw-msg:not(.thread-open) .pmw-msg-thread{ display:none; }
+  .pmw-thread-back{ display:block; }
+}

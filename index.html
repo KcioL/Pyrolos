@@ -62,6 +62,7 @@
     <button class="pmw-tab active" data-view="carte">Carte</button>
     <button class="pmw-tab" data-view="itineraires">Itinéraires</button>
     <button class="pmw-tab" data-view="riders">Rouler ensemble</button>
+    <button class="pmw-tab" data-view="messages">Messages <span class="pmw-badge-dot" id="pmw-msg-dot" hidden></span></button>
     <button class="pmw-tab" data-view="classement">Classement</button>
     <button class="pmw-tab" data-view="succes">Succès</button>
   </nav>
@@ -220,6 +221,31 @@
 
     <div class="pmw-riders" id="pmw-riders"></div>
     <p class="pmw-riders-note" id="pmw-riders-count"></p>
+  </section>
+
+  <!-- ============ VUE MESSAGES ============ -->
+  <section class="pmw-view" id="view-messages" hidden>
+    <div class="pmw-section-head">
+      <h2>Messages</h2>
+      <p class="pmw-section-sub">Tes échanges avec les autres motards. Conversations strictement privées.</p>
+    </div>
+
+    <div class="pmw-msg" id="pmw-msg">
+      <aside class="pmw-msg-list" id="pmw-conv-list"></aside>
+      <div class="pmw-msg-thread">
+        <div class="pmw-thread-head" id="pmw-thread-head" hidden>
+          <button class="pmw-thread-back" id="pmw-thread-back" aria-label="Retour">←</button>
+          <h3 id="pmw-thread-title"></h3>
+        </div>
+        <div class="pmw-thread-body" id="pmw-thread-body">
+          <div class="pmw-empty">Sélectionne une conversation, ou écris à un motard depuis l'onglet « Rouler ensemble ».</div>
+        </div>
+        <div class="pmw-thread-form" id="pmw-thread-form" hidden>
+          <textarea id="pmw-msg-input" rows="1" maxlength="1000" placeholder="Ton message…"></textarea>
+          <button class="pmw-btn pmw-btn-primary pmw-btn-sm" id="pmw-msg-send">Envoyer</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ VUE CLASSEMENT ============ -->

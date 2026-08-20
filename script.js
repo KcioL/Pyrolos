@@ -124,6 +124,7 @@ async function init() {
   initSort();
   initBuilder();
   initRiders();
+  initMessages();
 }
 
 /* ---------- Stats & filtres (vue Carte) ---------- */
@@ -1229,12 +1230,18 @@ function renderRiders() {
         ${r.cols ? `<span>⛰️ ${r.cols} cols roulés</span>` : ""}
       </div>
       ${r.desc ? `<p class="pmw-rider-desc">${escapeHtml(r.desc)}</p>` : ""}
-      ${r.instagram
-        ? `<a class="pmw-rider-insta" href="https://instagram.com/${encodeURIComponent(r.instagram)}"
-              target="_blank" rel="noopener noreferrer">📷 @${escapeHtml(r.instagram)}</a>`
-        : `<span class="pmw-rider-nocontact">Pas de contact renseigné</span>`}
+      <div class="pmw-rider-actions">
+        <button class="pmw-rider-msg" data-msg-uid="${r.id}" data-msg-nom="${escapeHtml(r.pseudo || "Motard")}">✉️ Message</button>
+        ${r.instagram
+          ? `<a class="pmw-rider-insta" href="https://instagram.com/${encodeURIComponent(r.instagram)}"
+                target="_blank" rel="noopener noreferrer">📷 @${escapeHtml(r.instagram)}</a>`
+          : ""}
+      </div>
     </div>
   `).join("");
+
+  host.querySelectorAll("[data-msg-uid]").forEach(b =>
+    b.addEventListener("click", () => messageRider(b.dataset.msgUid, b.dataset.msgNom)));
 
   const n = list.length;
   countEl.textContent = n === 1
@@ -1347,6 +1354,174 @@ async function deleteCard() {
 // rechargement à la connexion / déconnexion
 window.pyrolosRefreshRiders = loadRiders;
 
+/* =========================================================================
+   MESSAGERIE
+   ========================================================================= */
+
+let CONVS = [];
+let activeConv = null;
+let unsubConvs = null, unsubMsgs = null;
+
+function initMessages() {
+  const send = document.getElementById("pmw-msg-send");
+  if (!send) return;
+
+  send.addEventListener("click", sendMessage);
+
+  const input = document.getElementById("pmw-msg-input");
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  // la zone de saisie grandit avec le texte
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+  });
+
+  document.getElementById("pmw-thread-back")
+    .addEventListener("click", () => closeThread());
+}
+
+/** (Re)démarre l'écoute des conversations. Appelé à chaque connexion. */
+function watchConversations() {
+  if (unsubConvs) { unsubConvs(); unsubConvs = null; }
+  closeThread();
+
+  if (!window.PyrolosMessages || !window.PyrolosMessages.isSignedIn()) {
+    CONVS = [];
+    renderConvList();
+    return;
+  }
+  unsubConvs = window.PyrolosMessages.listenConversations(list => {
+    CONVS = list;
+    renderConvList();
+    updateUnreadDot();
+  });
+}
+
+function renderConvList() {
+  const host = document.getElementById("pmw-conv-list");
+  if (!host) return;
+
+  if (!window.PyrolosMessages || !window.PyrolosMessages.isSignedIn()) {
+    host.innerHTML = `<div class="pmw-empty">Connecte-toi pour accéder à tes messages.</div>`;
+    return;
+  }
+  if (!CONVS.length) {
+    host.innerHTML = `<div class="pmw-empty">Aucune conversation. Depuis « Rouler ensemble », clique sur ✉️ pour écrire à quelqu'un.</div>`;
+    return;
+  }
+
+  const me = window.PyrolosMessages.myUid();
+  host.innerHTML = CONVS.map(c => {
+    const other = c.participants.find(u => u !== me);
+    const nom = (c.pseudos && c.pseudos[other]) || "Motard";
+    const nonLu = c.read && c.read[me] === false;
+    return `
+      <button class="pmw-conv ${activeConv === c.id ? "on" : ""} ${nonLu ? "unread" : ""}"
+              data-conv="${c.id}" data-nom="${escapeHtml(nom)}">
+        <span class="pmw-conv-name">${escapeHtml(nom)}</span>
+        <span class="pmw-conv-last">${escapeHtml(c.lastText || "Nouvelle conversation")}</span>
+        ${nonLu ? '<span class="pmw-conv-dot"></span>' : ""}
+      </button>`;
+  }).join("");
+
+  host.querySelectorAll("[data-conv]").forEach(b =>
+    b.addEventListener("click", () => openThread(b.dataset.conv, b.dataset.nom)));
+}
+
+function openThread(convId, nom) {
+  activeConv = convId;
+  document.getElementById("pmw-thread-head").hidden = false;
+  document.getElementById("pmw-thread-form").hidden = false;
+  document.getElementById("pmw-thread-title").textContent = nom;
+  document.getElementById("pmw-msg").classList.add("thread-open");
+  renderConvList();
+
+  if (unsubMsgs) { unsubMsgs(); unsubMsgs = null; }
+  const body = document.getElementById("pmw-thread-body");
+  body.innerHTML = `<div class="pmw-empty">Chargement…</div>`;
+
+  unsubMsgs = window.PyrolosMessages.listenMessages(convId, msgs => {
+    const me = window.PyrolosMessages.myUid();
+    body.innerHTML = msgs.length
+      ? msgs.map(m => `
+          <div class="pmw-bubble ${m.from === me ? "mine" : ""}">
+            <p>${escapeHtml(m.text)}</p>
+            <time>${formatMsgDate(m.createdAt)}</time>
+          </div>`).join("")
+      : `<div class="pmw-empty">Aucun message. Lance la conversation !</div>`;
+    body.scrollTop = body.scrollHeight;
+  });
+
+  window.PyrolosMessages.markRead(convId);
+}
+
+function closeThread() {
+  activeConv = null;
+  if (unsubMsgs) { unsubMsgs(); unsubMsgs = null; }
+  const head = document.getElementById("pmw-thread-head");
+  if (!head) return;
+  head.hidden = true;
+  document.getElementById("pmw-thread-form").hidden = true;
+  document.getElementById("pmw-msg").classList.remove("thread-open");
+  document.getElementById("pmw-thread-body").innerHTML =
+    `<div class="pmw-empty">Sélectionne une conversation, ou écris à un motard depuis l'onglet « Rouler ensemble ».</div>`;
+  renderConvList();
+}
+
+async function sendMessage() {
+  const input = document.getElementById("pmw-msg-input");
+  const text = input.value.trim();
+  if (!text || !activeConv) return;
+
+  input.value = "";
+  input.style.height = "auto";
+  try {
+    await window.PyrolosMessages.send(activeConv, text);
+  } catch (err) {
+    console.error(err);
+    input.value = text;   // on rend le texte à l'utilisateur en cas d'échec
+  }
+}
+
+/** Ouvre (ou crée) une conversation avec un motard depuis sa fiche. */
+async function messageRider(uid, pseudo) {
+  if (!window.PyrolosMessages || !window.PyrolosMessages.isSignedIn()) {
+    if (window.PyrolosRating) window.PyrolosRating.openLogin();
+    return;
+  }
+  try {
+    const id = await window.PyrolosMessages.open(uid, pseudo);
+    document.querySelector('.pmw-tab[data-view="messages"]').click();
+    setTimeout(() => openThread(id, pseudo), 120);
+  } catch (err) {
+    console.error("Ouverture de conversation impossible :", err);
+  }
+}
+
+function updateUnreadDot() {
+  const dot = document.getElementById("pmw-msg-dot");
+  if (!dot || !window.PyrolosMessages) return;
+  const me = window.PyrolosMessages.myUid();
+  const n = CONVS.filter(c => c.read && c.read[me] === false).length;
+  dot.hidden = n === 0;
+  dot.textContent = n > 9 ? "9+" : String(n);
+}
+
+function formatMsgDate(ts) {
+  if (!ts || !ts.toDate) return "";
+  const d = ts.toDate();
+  const auj = new Date();
+  const memeJour = d.toDateString() === auj.toDateString();
+  return memeJour
+    ? d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) + " " +
+      d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+window.pyrolosRefreshMessages = watchConversations;
+
 /* ---------- Onglets ---------- */
 
 function initTabs() {
@@ -1355,6 +1530,7 @@ function initTabs() {
     carte: document.getElementById("view-carte"),
     itineraires: document.getElementById("view-itineraires"),
     riders: document.getElementById("view-riders"),
+    messages: document.getElementById("view-messages"),
     classement: document.getElementById("view-classement"),
     succes: document.getElementById("view-succes")
   };

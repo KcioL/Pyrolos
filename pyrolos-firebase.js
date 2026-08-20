@@ -9,8 +9,9 @@ import {
   signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  getFirestore, doc, setDoc, deleteDoc, getDoc, addDoc,
-  collection, getDocs, query, orderBy, serverTimestamp
+  getFirestore, doc, setDoc, deleteDoc, getDoc, addDoc, updateDoc,
+  collection, getDocs, query, orderBy, where, limit,
+  onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { firebaseConfig } from "./firebase-config.js";
@@ -476,4 +477,133 @@ export const Riders = {
     if (!user) throw new Error("not-signed-in");
     await deleteDoc(doc(db, "riders", user.uid));
   }
+};
+
+
+/* ============================================================
+   MESSAGERIE
+   Modèle :
+     conversations/{convId}            { participants, pseudos, lastText, lastAt, lastFrom, read }
+     conversations/{convId}/messages/  { from, text, createdAt }
+
+   L'identifiant de conversation est la concaténation des deux uid
+   triés alphabétiquement : deux personnes ne peuvent donc jamais
+   ouvrir deux fils parallèles, et l'id se recalcule sans requête.
+
+   Les règles n'autorisent l'accès qu'aux deux participants.
+   ============================================================ */
+
+export const Messages = {
+
+  /** Identifiant déterministe d'une conversation entre deux comptes. */
+  convId(otherUid) {
+    const me = Auth.current?.uid;
+    if (!me) throw new Error("not-signed-in");
+    return [me, otherUid].sort().join("__");
+  },
+
+  /** Crée la conversation si besoin, puis renvoie son identifiant. */
+  async open(otherUid, otherPseudo) {
+    const me = Auth.current;
+    if (!me) throw new Error("not-signed-in");
+    if (otherUid === me.uid) throw new Error("self");
+
+    const id = this.convId(otherUid);
+    const ref = doc(db, "conversations", id);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        participants: [me.uid, otherUid].sort(),
+        pseudos: {
+          [me.uid]: displayNameOf(me).slice(0, 40),
+          [otherUid]: (otherPseudo || "Motard").slice(0, 40)
+        },
+        lastText: "",
+        lastFrom: "",
+        lastAt: serverTimestamp(),
+        read: { [me.uid]: true, [otherUid]: true }
+      });
+    }
+    return id;
+  },
+
+  /** Envoie un message. */
+  async send(convId, text) {
+    const me = Auth.current;
+    if (!me) throw new Error("not-signed-in");
+
+    const body = (text || "").trim().slice(0, 1000);
+    if (!body) return;
+
+    // L'identifiant de conversation EST la liste des deux uid triés.
+    // On en déduit les participants sans relire le document : cela
+    // économise une lecture Firestore à chaque message envoyé.
+    const participants = convId.split("__");
+    if (participants.length !== 2 || !participants.includes(me.uid)) {
+      throw new Error("bad-conversation");
+    }
+    const other = participants.find(u => u !== me.uid);
+    const ref = doc(db, "conversations", convId);
+
+    // Les participants sont recopiés dans chaque message : les règles
+    // vérifient ainsi l'accès sans appeler get() sur la conversation
+    // parente, or chaque get() d'une règle est facturé comme une lecture.
+    await addDoc(collection(db, "conversations", convId, "messages"), {
+      from: me.uid,
+      participants,
+      text: body,
+      createdAt: serverTimestamp()
+    });
+
+    await updateDoc(ref, {
+      lastText: body.slice(0, 120),
+      lastFrom: me.uid,
+      lastAt: serverTimestamp(),
+      [`read.${me.uid}`]: true,
+      [`read.${other}`]: false      // marque non lu pour le destinataire
+    });
+  },
+
+  /** Écoute la liste des conversations de l'utilisateur (temps réel). */
+  listenConversations(callback) {
+    const me = Auth.current;
+    if (!me) { callback([]); return () => {}; }
+
+    const q = query(
+      collection(db, "conversations"),
+      where("participants", "array-contains", me.uid),
+      orderBy("lastAt", "desc"),
+      limit(30)
+    );
+    return onSnapshot(q,
+      snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      err => { console.error("Conversations :", err); callback([]); });
+  },
+
+  /** Écoute les messages d'une conversation (temps réel). */
+  listenMessages(convId, callback) {
+    const q = query(
+      collection(db, "conversations", convId, "messages"),
+      orderBy("createdAt", "asc"),
+      limit(60)      // fenêtre volontairement courte : chaque message chargé
+                     // compte comme une lecture Firestore
+    );
+    return onSnapshot(q,
+      snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      err => { console.error("Messages :", err); callback([]); });
+  },
+
+  /** Marque la conversation comme lue pour l'utilisateur courant. */
+  async markRead(convId) {
+    const me = Auth.current;
+    if (!me) return;
+    try {
+      await updateDoc(doc(db, "conversations", convId), {
+        [`read.${me.uid}`]: true
+      });
+    } catch { /* sans gravité */ }
+  },
+
+  myUid() { return Auth.current?.uid || null; }
 };

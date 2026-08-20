@@ -3,7 +3,7 @@
 //  Fait le lien entre pyrolos-firebase.js et le DOM.
 // =============================================================
 
-import { Auth, Ratings, Ridden, Trips, Riders, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
+import { Auth, Ratings, Ridden, Trips, Riders, Messages, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
 
 const $ = id => document.getElementById(id);
 
@@ -56,6 +56,7 @@ Auth.onChange(async user => {
   // recharger les itinéraires personnels
   if (window.pyrolosRefreshTrips) await window.pyrolosRefreshTrips();
   if (window.pyrolosRefreshRiders) await window.pyrolosRefreshRiders();
+  if (window.pyrolosRefreshMessages) window.pyrolosRefreshMessages();
 
   // rafraîchir le widget de notation si une fiche est ouverte
   const open = document.querySelector("[data-rating-col]");
@@ -319,6 +320,15 @@ export async function mountRating(host, col) {
 // exposés pour script.js, qui n'est pas un module
 window.PyrolosRating = { mount: mountRating, openLogin: () => openModal("login") };
 window.PyrolosRidden = Ridden;
+window.PyrolosMessages = {
+  isSignedIn: () => !!Auth.current,
+  myUid: () => Messages.myUid(),
+  open:   (uid, pseudo) => Messages.open(uid, pseudo),
+  send:   (id, txt) => Messages.send(id, txt),
+  markRead: id => Messages.markRead(id),
+  listenConversations: cb => Messages.listenConversations(cb),
+  listenMessages: (id, cb) => Messages.listenMessages(id, cb)
+};
 window.PyrolosRiders = {
   isSignedIn: () => !!Auth.current,
   list:   () => Riders.list(),

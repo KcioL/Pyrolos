@@ -3,10 +3,10 @@
 Firebase Authentication réclame techniquement une adresse e-mail. Le site
 en fabrique donc une, invisible pour l'utilisateur, à partir du pseudo :
 
-    "Motard64"  →  motard64@pyrolos.local
+    "Motard64"  →  motard64@Pyrolos.local
 
 Le visiteur ne saisit jamais qu'un pseudo et un mot de passe. Le domaine
-`pyrolos.local` n'existe pas et ne reçoit rien : c'est volontaire.
+`Pyrolos.local` n'existe pas et ne reçoit rien : c'est volontaire.
 
 Bon effet de bord : **l'unicité du pseudo est garantie par Firebase lui-même**,
 de manière atomique. Deux personnes qui s'inscrivent au même instant avec le
