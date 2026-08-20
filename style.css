@@ -903,3 +903,43 @@ body{
   .pmw-msg:not(.thread-open) .pmw-msg-thread{ display:none; }
   .pmw-thread-back{ display:block; }
 }
+
+/* ---------- MA FICHE, EN TÊTE ---------- */
+.pmw-mine-title{
+  font-family:'Fraunces',serif; font-size:16px; font-weight:600;
+  color:var(--text-muted); margin:22px 32px 0;
+  padding-bottom:8px; border-bottom:1px solid var(--line);
+}
+.pmw-riders-mine{ grid-template-columns:minmax(0,420px) !important; }
+
+.pmw-rider.is-mine{
+  position:relative;
+  border-color:var(--sage);
+  background:linear-gradient(180deg, rgba(131,163,116,.07), transparent 60%), var(--night-900);
+}
+
+/* croix rouge de suppression */
+.pmw-rider-del{
+  position:absolute; top:-9px; right:-9px; z-index:2;
+  min-width:26px; height:26px; padding:0 9px;
+  border-radius:13px; cursor:pointer;
+  background:#b3574a; border:2px solid var(--night-950); color:#fff;
+  font-family:'Work Sans',sans-serif; font-size:12px; font-weight:700;
+  line-height:1; transition:.15s;
+  box-shadow:0 2px 8px rgba(0,0,0,.45);
+}
+.pmw-rider-del:hover{ background:#c9564a; transform:scale(1.08); }
+.pmw-rider-del.armed{
+  background:#8f3d33; padding:0 12px; font-size:11px;
+  animation:pmw-pulse 1s ease-in-out infinite;
+  /* le bouton s'élargit vers l'intérieur de la carte, jamais hors cadre */
+  transform-origin:right center;
+}
+@keyframes pmw-pulse{
+  0%,100%{ box-shadow:0 2px 8px rgba(0,0,0,.45); }
+  50%{ box-shadow:0 2px 14px rgba(201,86,74,.8); }
+}
+
+@media(max-width:640px){
+  .pmw-mine-title{ margin:18px 20px 0; }
+}

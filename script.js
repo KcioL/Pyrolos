@@ -1196,26 +1196,11 @@ async function loadRiders() {
   renderRiders();
 }
 
-function renderRiders() {
-  const host = document.getElementById("pmw-riders");
-  const countEl = document.getElementById("pmw-riders-count");
-  if (!host) return;
-
-  const list = RIDERS.filter(r =>
-    (!filterMassif || r.massif === filterMassif) &&
-    (!filterStyle || stylesOf(r).includes(filterStyle)));
-
-  if (!list.length) {
-    host.innerHTML = `<div class="pmw-empty">
-      ${RIDERS.length ? "Aucune fiche ne correspond à ces filtres."
-                      : "Aucune fiche pour le moment. Sois le premier à te présenter !"}
-    </div>`;
-    countEl.textContent = "";
-    return;
-  }
-
-  host.innerHTML = list.map(r => `
-    <div class="pmw-rider style-${stylesOf(r)[0] || "normal"}">
+/** Gabarit d'une fiche. `mine` ajoute les commandes de modification. */
+function riderCard(r, mine = false) {
+  return `
+    <div class="pmw-rider style-${stylesOf(r)[0] || "normal"} ${mine ? "is-mine" : ""}">
+      ${mine ? `<button class="pmw-rider-del" id="pmw-del-card" title="Supprimer ma fiche" aria-label="Supprimer ma fiche">✕</button>` : ""}
       <div class="pmw-rider-head">
         <h3>${escapeHtml(r.pseudo || "Motard")}</h3>
       </div>
@@ -1231,54 +1216,71 @@ function renderRiders() {
       </div>
       ${r.desc ? `<p class="pmw-rider-desc">${escapeHtml(r.desc)}</p>` : ""}
       <div class="pmw-rider-actions">
-        <button class="pmw-rider-msg" data-msg-uid="${r.id}" data-msg-nom="${escapeHtml(r.pseudo || "Motard")}">✉️ Message</button>
+        ${mine
+          ? `<button class="pmw-rider-msg" id="pmw-edit-card">✏️ Modifier</button>`
+          : `<button class="pmw-rider-msg" data-msg-uid="${r.id}" data-msg-nom="${escapeHtml(r.pseudo || "Motard")}">✉️ Message</button>`}
         ${r.instagram
           ? `<a class="pmw-rider-insta" href="https://instagram.com/${encodeURIComponent(r.instagram)}"
                 target="_blank" rel="noopener noreferrer">📷 @${escapeHtml(r.instagram)}</a>`
-          : ""}
+          : (mine ? "" : "")}
       </div>
-    </div>
-  `).join("");
+    </div>`;
+}
+
+function renderRiders() {
+  const host = document.getElementById("pmw-riders");
+  const countEl = document.getElementById("pmw-riders-count");
+  const mineWrap = document.getElementById("pmw-my-card-wrap");
+  const mineHost = document.getElementById("pmw-my-card");
+  const othersTitle = document.getElementById("pmw-others-title");
+  if (!host) return;
+
+  const me = window.PyrolosRiders && window.PyrolosRiders.isSignedIn()
+             ? window.PyrolosRiders.myUid() : null;
+
+  // --- ma fiche, isolée en haut ---
+  const mine = me ? RIDERS.find(r => r.id === me) : null;
+  if (mine) {
+    mineWrap.hidden = false;
+    mineHost.innerHTML = riderCard(mine, true);
+    document.getElementById("pmw-edit-card").addEventListener("click", openCardModal);
+    document.getElementById("pmw-del-card").addEventListener("click", confirmDeleteCard);
+  } else {
+    mineWrap.hidden = true;
+    mineHost.innerHTML = "";
+  }
+
+  // le bouton principal s'adapte à l'existence d'une fiche
+  const btn = document.getElementById("pmw-my-card-btn");
+  if (btn) btn.textContent = mine ? "✏️ Modifier ma fiche" : "🤝 Créer ma fiche";
+
+  // --- les autres ---
+  const list = RIDERS.filter(r =>
+    r.id !== me &&
+    (!filterMassif || r.massif === filterMassif) &&
+    (!filterStyle || stylesOf(r).includes(filterStyle)));
+
+  othersTitle.hidden = !mine;
+
+  if (!list.length) {
+    host.innerHTML = `<div class="pmw-empty">
+      ${RIDERS.filter(r => r.id !== me).length
+        ? "Aucune fiche ne correspond à ces filtres."
+        : "Personne d'autre pour le moment. Reviens bientôt !"}
+    </div>`;
+    countEl.textContent = "";
+    return;
+  }
+
+  host.innerHTML = list.map(r => riderCard(r, false)).join("");
 
   host.querySelectorAll("[data-msg-uid]").forEach(b =>
     b.addEventListener("click", () => messageRider(b.dataset.msgUid, b.dataset.msgNom)));
 
   const n = list.length;
   countEl.textContent = n === 1
-    ? "1 motard sur la ligne de départ."
-    : `${n} motards sur la ligne de départ.`;
-}
-
-/** Coche / décoche un style, dans la limite de MAX_STYLES. */
-function toggleCardStyle(id) {
-  const hint = document.getElementById("pmw-style-hint");
-  const i = cardStyles.indexOf(id);
-
-  if (i !== -1) {
-    cardStyles.splice(i, 1);
-  } else if (cardStyles.length >= MAX_STYLES) {
-    hint.textContent = `3 styles maximum — décoche-en un avant d'en ajouter un autre.`;
-    hint.classList.add("ko");
-    setTimeout(() => {
-      hint.textContent = "Sélectionne 1 à 3 styles.";
-      hint.classList.remove("ko");
-    }, 2200);
-    return;
-  } else {
-    cardStyles.push(id);
-  }
-  renderStylePicker();
-}
-
-function renderStylePicker() {
-  document.querySelectorAll(".pmw-style-opt").forEach(b =>
-    b.classList.toggle("on", cardStyles.includes(b.dataset.style)));
-  const hint = document.getElementById("pmw-style-hint");
-  if (!hint.classList.contains("ko")) {
-    hint.textContent = cardStyles.length
-      ? `${cardStyles.length} / ${MAX_STYLES} sélectionné${cardStyles.length > 1 ? "s" : ""}`
-      : "Sélectionne 1 à 3 styles.";
-  }
+    ? "1 autre motard sur la ligne de départ."
+    : `${n} autres motards sur la ligne de départ.`;
 }
 
 async function openCardModal() {
@@ -1349,6 +1351,37 @@ async function deleteCard() {
   await window.PyrolosRiders.remove();
   document.getElementById("pmw-card-modal").hidden = true;
   await loadRiders();
+}
+
+/** Suppression depuis la croix : deux clics, pour éviter l'accident. */
+let delArmed = false, delTimer = null;
+async function confirmDeleteCard(e) {
+  const btn = e.currentTarget;
+
+  if (!delArmed) {
+    delArmed = true;
+    btn.classList.add("armed");
+    btn.textContent = "Confirmer ?";
+    btn.title = "Cliquer à nouveau pour supprimer définitivement";
+    delTimer = setTimeout(() => {
+      delArmed = false;
+      btn.classList.remove("armed");
+      btn.textContent = "✕";
+      btn.title = "Supprimer ma fiche";
+    }, 4000);
+    return;
+  }
+
+  clearTimeout(delTimer);
+  delArmed = false;
+  btn.textContent = "…";
+  try {
+    await window.PyrolosRiders.remove();
+    await loadRiders();
+  } catch (err) {
+    console.error(err);
+    btn.textContent = "✕";
+  }
 }
 
 // rechargement à la connexion / déconnexion

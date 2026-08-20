@@ -331,6 +331,7 @@ window.PyrolosMessages = {
 };
 window.PyrolosRiders = {
   isSignedIn: () => !!Auth.current,
+  myUid: () => Auth.current?.uid || null,
   list:   () => Riders.list(),
   mine:   () => Riders.mine(),
   save:   d  => Riders.save(d),
