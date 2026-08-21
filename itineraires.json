@@ -7,7 +7,7 @@
     "depart": "Sud de Pau",
     "desc": "Une boucle courte et roulante dans les coteaux du Béarn, au sud de Pau. Pas de haut col ici : des petites routes vallonnées qui enchaînent les courbes entre vignes et villages, avec Lasseube et Lacommande en points de mire. Le format idéal pour une sortie de fin de journée, ou pour prolonger une balade par une halte gourmande.",
     "cols": [],
-    "url": "https://www.google.com/maps?saddr=Gan%2C%20Pyr%C3%A9n%C3%A9es-Atlantiques&daddr=Lasseube+to:Monein+to:Lacommande+to:Gan%2C%20Pyr%C3%A9n%C3%A9es-Atlantiques&dirflg=ht",
+    "url": "https://www.google.com/maps?saddr=43.30603,-0.40346&daddr=43.29596,-0.47488+to:43.23642,-0.48472+to:43.20724,-0.56965+to:43.18130,-0.57051+to:43.16281,-0.45053+to:43.23184,-0.39157+to:43.30603,-0.40346&dirflg=ht",
     "gpx": "gpx/itineraire-gourmand-lasseube-lacommande.gpx",
     "id": "itineraire-gourmand-par-lasseube-et-laco",
     "km": 72,
