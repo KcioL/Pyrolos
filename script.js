@@ -561,7 +561,7 @@ function initBuilder() {
       trip.mode = b.dataset.mode;
       document.querySelectorAll(".pmw-mode").forEach(x => x.classList.remove("active"));
       b.classList.add("active");
-      document.getElementById("pmw-end-row").hidden = trip.mode !== "point";
+      majArrivee();
       trip.route = null;
       renderBuilder();
     }));
@@ -586,6 +586,7 @@ function initBuilder() {
     renderBuilder();
   });
 
+  majArrivee();
   renderBuilder();
 }
 
@@ -623,6 +624,20 @@ async function reverseGeocode(pt) {
     const nom = a.village || a.town || a.city || a.municipality || a.county;
     if (nom) { pt.label = nom; renderBuilder(); }
   } catch { /* on garde les coordonnées */ }
+}
+
+/** Affiche le bloc Arrivée uniquement quand elle diffère du départ,
+    et rappelle en clair ce que fait le mode choisi. */
+function majArrivee() {
+  const bl = document.getElementById("pmw-end-bl");
+  const hint = document.getElementById("pmw-mode-hint");
+  if (bl) bl.hidden = trip.mode !== "point";
+  if (hint) {
+    hint.textContent =
+      trip.mode === "boucle" ? "Le tracé revient au point de départ."
+      : trip.mode === "aller-retour" ? "Même route parcourue dans les deux sens."
+      : "Choisis un point d'arrivée différent du départ.";
+  }
 }
 
 function toggleCol(nom) {
@@ -777,14 +792,6 @@ function renderBuilder() {
     b.addEventListener("click", () => { trip.via.splice(+b.dataset.rmvia, 1); trip.route = null; renderBuilder(); }));
 
   // --- libellés départ / arrivée ---
-  const arrLabel = document.getElementById("pmw-arrivee-label");
-  if (arrLabel) {
-    arrLabel.textContent =
-      trip.mode === "boucle" ? "retour au point de départ"
-      : trip.mode === "aller-retour" ? "même route en sens inverse"
-      : "point à définir";
-  }
-
   document.getElementById("pmw-start-label").textContent = trip.start ? trip.start.label : "Non défini";
   document.getElementById("pmw-start-label").classList.toggle("set", !!trip.start);
   document.getElementById("pmw-end-label").textContent = trip.end ? trip.end.label : "Non défini";
@@ -844,6 +851,7 @@ function renderBuilder() {
   const ec = document.getElementById("pmw-end-clear");
   if (sc) sc.hidden = !trip.start;
   if (ec) ec.hidden = !(trip.end && trip.mode === "point");
+  majArrivee();
 
   // --- tracé ---
   if (routeLayer) { builderMap.removeLayer(routeLayer); routeLayer = null; }
@@ -1315,7 +1323,7 @@ function loadTrip(t) {
 
   document.querySelectorAll(".pmw-mode").forEach(x =>
     x.classList.toggle("active", x.dataset.mode === trip.mode));
-  document.getElementById("pmw-end-row").hidden = trip.mode !== "point";
+  majArrivee();
 
   renderBuilder();
   document.querySelector(".pmw-builder").scrollIntoView({ behavior: "smooth", block: "start" });

@@ -147,6 +147,17 @@
           </select>
         </div>
 
+        <!-- type de parcours : choisi EN PREMIER, il conditionne la suite -->
+        <div class="pmw-bl">
+          <span class="pmw-bl-label">Type de parcours</span>
+          <div class="pmw-modes" id="pmw-modes">
+            <button class="pmw-mode active" data-mode="boucle">↩ Boucle</button>
+            <button class="pmw-mode" data-mode="aller-retour">⇄ Aller-retour</button>
+            <button class="pmw-mode" data-mode="point">📍 Arrivée ailleurs</button>
+          </div>
+          <small class="pmw-hint" id="pmw-mode-hint"></small>
+        </div>
+
         <!-- départ -->
         <div class="pmw-bl">
           <span class="pmw-bl-label"><i class="pmw-pin d">D</i> Départ</span>
@@ -157,29 +168,21 @@
           </div>
         </div>
 
-        <!-- type de parcours -->
-        <div class="pmw-bl">
-          <span class="pmw-bl-label">
-            <i class="pmw-pin a">A</i> Arrivée
-            <em class="pmw-arrivee-hint" id="pmw-arrivee-label"></em>
-          </span>
-          <div class="pmw-modes" id="pmw-modes">
-            <button class="pmw-mode active" data-mode="boucle">↩ Boucle</button>
-            <button class="pmw-mode" data-mode="aller-retour">⇄ Aller-retour</button>
-            <button class="pmw-mode" data-mode="point">📍 Autre point</button>
-          </div>
-          <div class="pmw-bl-row" id="pmw-end-row" hidden>
-            <span class="pmw-picked" id="pmw-end-label">Non défini</span>
-            <button class="pmw-point-clear" id="pmw-end-clear" title="Effacer l'arrivée" aria-label="Effacer l'arrivée" hidden>✕</button>
-            <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" data-pick="end">📍 Choisir sur la carte</button>
-          </div>
-        </div>
-
         <!-- points de passage -->
         <div class="pmw-bl">
           <span class="pmw-bl-label"><i class="pmw-pin p">P</i> Points de passage</span>
           <div class="pmw-chips-row" id="pmw-via-chips"></div>
           <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" data-pick="via">📍 Ajouter un passage</button>
+        </div>
+
+        <!-- arrivée : uniquement quand elle diffère du départ -->
+        <div class="pmw-bl" id="pmw-end-bl" hidden>
+          <span class="pmw-bl-label"><i class="pmw-pin a">A</i> Arrivée</span>
+          <div class="pmw-bl-row" id="pmw-end-row">
+            <span class="pmw-picked" id="pmw-end-label">Non défini</span>
+            <button class="pmw-point-clear" id="pmw-end-clear" title="Effacer l'arrivée" aria-label="Effacer l'arrivée" hidden>✕</button>
+            <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" data-pick="end">📍 Choisir sur la carte</button>
+          </div>
         </div>
 
         <p class="pmw-builder-tip">

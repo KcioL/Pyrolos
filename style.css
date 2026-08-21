@@ -16,6 +16,11 @@
 
 *{ box-sizing:border-box; }
 
+/* Un élément portant l'attribut `hidden` doit rester invisible, même si
+   une règle lui donne un `display` explicite (flex, grid…). Sans cela,
+   toute règle `display:` écrase le masquage natif du navigateur. */
+[hidden]{ display:none !important; }
+
 body{
   margin:0;
   background:var(--night-950);
@@ -1229,8 +1234,4 @@ body{
 .pmw-mk.da{
   background:linear-gradient(135deg, var(--good) 0 50%, #b3574a 50% 100%);
   color:#fff; width:34px; border-radius:17px; font-size:9.5px; letter-spacing:-.02em;
-}
-.pmw-arrivee-hint{
-  font-style:normal; font-weight:400; text-transform:none;
-  letter-spacing:0; color:var(--text-muted); font-size:10.5px; margin-left:4px;
 }
