@@ -996,3 +996,12 @@ body{
   border-left:2px solid var(--line); padding-left:11px; margin:0 0 16px;
 }
 #pmw-del-word{ letter-spacing:.08em; font-weight:600; }
+
+/* ---------- CONVERSATION AVEC UN COMPTE SUPPRIMÉ ---------- */
+.pmw-conv.gone .pmw-conv-name{ color:var(--text-muted); font-style:italic; }
+.pmw-conv.gone .pmw-conv-last{ opacity:.6; }
+.pmw-thread-gone{
+  padding:14px 18px; margin:0; border-top:1px solid var(--line);
+  font-size:12px; line-height:1.55; color:var(--text-muted);
+  background:var(--night-950); text-align:center;
+}

@@ -1469,7 +1469,40 @@ function watchConversations() {
     CONVS = list;
     renderConvList();
     updateUnreadDot();
+    detecterComptesSupprimes();
   });
+}
+
+/* Comptes disparus AVANT l'ajout du marqueur `deleted` : on vérifie une
+   seule fois leur existence dans `accounts`, et on garde le résultat en
+   mémoire pour ne pas relire à chaque affichage. */
+const comptesConnus = new Map();
+
+async function compteExiste(uid) {
+  if (comptesConnus.has(uid)) return comptesConnus.get(uid);
+  let existe = true;
+  try {
+    existe = await window.PyrolosMessages.accountExists(uid);
+  } catch { existe = true; }   // en cas de doute, on n'invente pas
+  comptesConnus.set(uid, existe);
+  return existe;
+}
+
+/** Repère les interlocuteurs dont le compte n'existe plus, puis réaffiche. */
+async function detecterComptesSupprimes() {
+  if (!window.PyrolosMessages || !window.PyrolosMessages.isSignedIn()) return;
+  const me = window.PyrolosMessages.myUid();
+  let changement = false;
+
+  for (const c of CONVS) {
+    const other = c.participants.find(u => u !== me);
+    if (!other || (c.deleted && c.deleted[other])) continue;
+    if (!(await compteExiste(other))) {
+      c.deleted = { ...(c.deleted || {}), [other]: true };
+      changement = true;
+    }
+  }
+  if (changement) renderConvList();
 }
 
 function renderConvList() {
@@ -1488,26 +1521,36 @@ function renderConvList() {
   const me = window.PyrolosMessages.myUid();
   host.innerHTML = CONVS.map(c => {
     const other = c.participants.find(u => u !== me);
-    const nom = (c.pseudos && c.pseudos[other]) || "Motard";
+    const supprime = !!(c.deleted && c.deleted[other]);
+    const nom = supprime
+      ? "Utilisateur introuvable"
+      : ((c.pseudos && c.pseudos[other]) || "Motard");
     const nonLu = c.read && c.read[me] === false;
     return `
-      <button class="pmw-conv ${activeConv === c.id ? "on" : ""} ${nonLu ? "unread" : ""}"
-              data-conv="${c.id}" data-nom="${escapeHtml(nom)}">
-        <span class="pmw-conv-name">${escapeHtml(nom)}</span>
+      <button class="pmw-conv ${activeConv === c.id ? "on" : ""} ${nonLu ? "unread" : ""} ${supprime ? "gone" : ""}"
+              data-conv="${c.id}" data-nom="${escapeHtml(nom)}" data-gone="${supprime ? "1" : ""}">
+        <span class="pmw-conv-name">${supprime ? "👤 " : ""}${escapeHtml(nom)}</span>
         <span class="pmw-conv-last">${escapeHtml(c.lastText || "Nouvelle conversation")}</span>
         ${nonLu ? '<span class="pmw-conv-dot"></span>' : ""}
       </button>`;
   }).join("");
 
   host.querySelectorAll("[data-conv]").forEach(b =>
-    b.addEventListener("click", () => openThread(b.dataset.conv, b.dataset.nom)));
+    b.addEventListener("click", () =>
+      openThread(b.dataset.conv, b.dataset.nom, b.dataset.gone === "1")));
 }
 
-function openThread(convId, nom) {
+function openThread(convId, nom, gone = false) {
   activeConv = convId;
   document.getElementById("pmw-thread-head").hidden = false;
-  document.getElementById("pmw-thread-form").hidden = false;
   document.getElementById("pmw-thread-title").textContent = nom;
+
+  // compte supprimé : on affiche l'historique mais on retire la saisie,
+  // il n'y a plus personne pour lire
+  const form = document.getElementById("pmw-thread-form");
+  const avis = document.getElementById("pmw-thread-gone");
+  form.hidden = gone;
+  if (avis) avis.hidden = !gone;
   document.getElementById("pmw-msg").classList.add("thread-open");
   renderConvList();
 
@@ -1537,6 +1580,8 @@ function closeThread() {
   if (!head) return;
   head.hidden = true;
   document.getElementById("pmw-thread-form").hidden = true;
+  const avis = document.getElementById("pmw-thread-gone");
+  if (avis) avis.hidden = true;
   document.getElementById("pmw-msg").classList.remove("thread-open");
   document.getElementById("pmw-thread-body").innerHTML =
     `<div class="pmw-empty">Sélectionne une conversation, ou écris à un motard depuis l'onglet « Rouler ensemble ».</div>`;

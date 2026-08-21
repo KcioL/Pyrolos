@@ -446,7 +446,8 @@ window.PyrolosMessages = {
   send:   (id, txt) => Messages.send(id, txt),
   markRead: id => Messages.markRead(id),
   listenConversations: cb => Messages.listenConversations(cb),
-  listenMessages: (id, cb) => Messages.listenMessages(id, cb)
+  listenMessages: (id, cb) => Messages.listenMessages(id, cb),
+  accountExists: uid => Messages.accountExists(uid)
 };
 window.PyrolosRiders = {
   isSignedIn: () => !!Auth.current,

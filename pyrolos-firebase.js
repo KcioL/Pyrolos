@@ -641,7 +641,13 @@ export const Messages = {
     } catch { /* sans gravité */ }
   },
 
-  myUid() { return Auth.current?.uid || null; }
+  myUid() { return Auth.current?.uid || null; },
+
+  /** Le compte existe-t-il encore ? (une lecture, mise en cache côté appelant) */
+  async accountExists(uid) {
+    const snap = await getDoc(doc(db, "accounts", uid));
+    return snap.exists();
+  }
 };
 
 
@@ -817,11 +823,24 @@ export const Account = {
         deleteDoc(doc(db, "cols", id, "ratings", uid)).catch(() => {})));
     });
 
-    // 6. présence et inscription
+    // 6. marquer les conversations : les messages restent (ils appartiennent
+    //    aussi au destinataire) mais l'interlocuteur doit voir que le compte
+    //    n'existe plus. Sans cela, quelqu'un recréant le même pseudo
+    //    hériterait visuellement d'une conversation qui n'est pas la sienne.
+    await essayer("conversations", async () => {
+      const q = query(collection(db, "conversations"),
+                      where("participants", "array-contains", uid));
+      const snap = await getDocs(q);
+      await Promise.all(snap.docs.map(d =>
+        setDoc(d.ref, { deleted: { [uid]: true } }, { merge: true })
+          .catch(() => {})));
+    });
+
+    // 7. présence et inscription
     await essayer("présence", () => deleteDoc(doc(db, "presence", uid)));
     await essayer("inscription", () => deleteDoc(doc(db, "accounts", uid)));
 
-    // 7. le compte lui-même, en dernier
+    // 8. le compte lui-même, en dernier
     await deleteUser(user);
 
     return { restant };
