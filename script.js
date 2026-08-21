@@ -549,6 +549,13 @@ function initBuilder() {
   document.querySelectorAll("[data-pick]").forEach(b =>
     b.addEventListener("click", () => setPickMode(b.dataset.pick)));
 
+  document.getElementById("pmw-start-clear").addEventListener("click", () => {
+    trip.start = null; trip.route = null; setPickMode(null); renderBuilder();
+  });
+  document.getElementById("pmw-end-clear").addEventListener("click", () => {
+    trip.end = null; trip.route = null; setPickMode(null); renderBuilder();
+  });
+
   document.querySelectorAll(".pmw-mode").forEach(b =>
     b.addEventListener("click", () => {
       trip.mode = b.dataset.mode;
@@ -595,6 +602,13 @@ function setPickMode(m) {
   document.getElementById("pmw-builder-map").style.cursor = m ? "crosshair" : "";
   document.querySelectorAll("[data-pick]").forEach(b =>
     b.classList.toggle("picking", b.dataset.pick === m));
+
+  // les marqueurs existants ne doivent pas intercepter le clic quand on
+  // est en train de désigner un nouveau point sur la carte
+  [startMarker, endMarker, ...viaMarkers].forEach(mk => {
+    if (!mk || !mk._icon) return;
+    mk._icon.style.pointerEvents = m ? "none" : "";
+  });
 }
 
 /** Nom lisible d'un point cliqué (Nominatim, sans clé). Best effort. */
@@ -773,15 +787,46 @@ function renderBuilder() {
     className: "", html: `<span class="pmw-mk ${cls}">${txt}</span>`,
     iconSize: [24, 24], iconAnchor: [12, 12]
   });
+
+  /* Marqueur déplaçable : on peut corriger un point sans tout refaire.
+     En mode « choisir sur la carte », il devient transparent aux clics,
+     sinon il intercepterait le clic destiné à la carte — ce qui donnait
+     l'impression qu'un point posé ne pouvait plus être déplacé. */
+  const poser = (pt, cls, txt, cible) => {
+    const m = L.marker([pt.lat, pt.lon], {
+      icon: pin(cls, txt),
+      draggable: true,
+      interactive: !pickMode,
+      autoPan: true
+    }).addTo(builderMap);
+
+    m.bindTooltip(`${txt === "D" ? "Départ" : txt === "A" ? "Arrivée" : "Passage"} — glisser pour déplacer`,
+                  { direction: "top", offset: [0, -12] });
+
+    m.on("dragend", e => {
+      const ll = e.target.getLatLng();
+      cible.lat = +ll.lat.toFixed(5);
+      cible.lon = +ll.lng.toFixed(5);
+      cible.label = `${cible.lat}, ${cible.lon}`;
+      trip.route = null;              // le tracé n'est plus valable
+      renderBuilder();
+      reverseGeocode(cible);
+    });
+    return m;
+  };
   if (startMarker) { builderMap.removeLayer(startMarker); startMarker = null; }
   if (endMarker)   { builderMap.removeLayer(endMarker);   endMarker = null; }
   viaMarkers.forEach(m => builderMap.removeLayer(m)); viaMarkers = [];
 
-  if (trip.start) startMarker = L.marker([trip.start.lat, trip.start.lon], { icon: pin("d", "D") }).addTo(builderMap);
-  if (trip.end && trip.mode === "point")
-    endMarker = L.marker([trip.end.lat, trip.end.lon], { icon: pin("a", "A") }).addTo(builderMap);
-  trip.via.forEach(p =>
-    viaMarkers.push(L.marker([p.lat, p.lon], { icon: pin("p", "P") }).addTo(builderMap)));
+  if (trip.start) startMarker = poser(trip.start, "d", "D", trip.start);
+  if (trip.end && trip.mode === "point") endMarker = poser(trip.end, "a", "A", trip.end);
+  trip.via.forEach(p => viaMarkers.push(poser(p, "p", "P", p)));
+
+  // boutons d'effacement, visibles seulement si le point existe
+  const sc = document.getElementById("pmw-start-clear");
+  const ec = document.getElementById("pmw-end-clear");
+  if (sc) sc.hidden = !trip.start;
+  if (ec) ec.hidden = !(trip.end && trip.mode === "point");
 
   // --- tracé ---
   if (routeLayer) { builderMap.removeLayer(routeLayer); routeLayer = null; }

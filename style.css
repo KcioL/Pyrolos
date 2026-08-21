@@ -1210,3 +1210,17 @@ body{
   .pmw-rm-row{ font-size:11.5px; }
   .pmw-rm-row .w, .pmw-rm-row .p{ font-size:10px; }
 }
+
+/* ---------- EFFACER UN POINT DU PARCOURS ---------- */
+.pmw-point-clear{
+  flex-shrink:0; width:26px; height:26px; border-radius:50%; cursor:pointer;
+  background:transparent; border:1px solid var(--line); color:var(--text-muted);
+  font-size:11px; line-height:1; transition:.14s;
+}
+.pmw-point-clear:hover{ border-color:#b3574a; color:#e0a08a; background:rgba(179,87,74,.12); }
+
+/* marqueur en cours de déplacement */
+.leaflet-marker-draggable{ cursor:grab; }
+.leaflet-marker-draggable:active{ cursor:grabbing; }
+.pmw-mk{ transition:transform .12s; }
+.leaflet-marker-draggable:hover .pmw-mk{ transform:scale(1.15); }
