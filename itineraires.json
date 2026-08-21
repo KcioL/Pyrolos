@@ -92,5 +92,22 @@
     "id": "cols-basques-et-villages-rouges",
     "km": 85,
     "dev": false
+  },
+  {
+    "nom": "Soulor et Aubisque depuis Jurançon",
+    "duree": "Journée",
+    "distance": "119 km",
+    "difficulte": "Modérée",
+    "depart": "Jurançon",
+    "desc": "Départ des coteaux de Jurançon, au sud de Pau, pour monter vers les deux cols voisins : le Soulor d'abord, puis l'Aubisque et sa corniche taillée dans la falaise au-dessus du Cirque du Litor. Retour par la vallée. Un format compact — moins de 120 km — mais qui condense ce que le Béarn fait de mieux. Prudence sur la corniche, étroite et exposée aux chutes de pierres.",
+    "cols": [
+      "Col du Soulor",
+      "Col d'Aubisque"
+    ],
+    "url": "https://www.google.com/maps?saddr=43.28034,-0.38764&daddr=43.15764,-0.40086+to:43.03785,-0.42352+to:42.96387,-0.34957+to:42.95410,-0.28742+to:43.00704,-0.26913+to:43.11571,-0.24647+to:43.22831,-0.25494+to:43.28034,-0.38764&dirflg=ht",
+    "gpx": "gpx/soulor-aubisque-depuis-jurancon.gpx",
+    "id": "soulor-aubisque-depuis-jurancon",
+    "km": 119,
+    "dev": false
   }
 ]
