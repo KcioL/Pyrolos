@@ -3,7 +3,7 @@
 //  Fait le lien entre pyrolos-firebase.js et le DOM.
 // =============================================================
 
-import { Auth, Ratings, Ridden, Trips, Riders, Messages, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
+import { Auth, Ratings, Ridden, Trips, Riders, Messages, Stats, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
 
 const $ = id => document.getElementById(id);
 
@@ -58,6 +58,11 @@ Auth.onChange(async user => {
   if (window.pyrolosRefreshRiders) await window.pyrolosRefreshRiders();
   if (window.pyrolosRefreshMessages) window.pyrolosRefreshMessages();
 
+  // présence : on signale son arrivée, ou on cesse de battre
+  if (user) Stats.startHeartbeat();
+  else Stats.stopHeartbeat();
+  refreshStats();
+
   // rafraîchir le widget de notation si une fiche est ouverte
   const open = document.querySelector("[data-rating-col]");
   if (open) mountRating(open, JSON.parse(open.dataset.ratingCol));
@@ -69,6 +74,8 @@ logoutBtn.addEventListener("click", async () => {
   // fraction de seconde à la déconnexion et déclenchent une erreur de
   // permission (sans gravité, mais polluante en console)
   if (window.pyrolosStopListeners) window.pyrolosStopListeners();
+  Stats.stopHeartbeat();
+  await Stats.clearPresence();     // avant la déconnexion, tant qu'on a le droit d'écrire
   await Auth.logout();
 });
 

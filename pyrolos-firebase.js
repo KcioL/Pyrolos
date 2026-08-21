@@ -11,7 +11,7 @@ import {
 import {
   getFirestore, doc, setDoc, deleteDoc, getDoc, addDoc, updateDoc,
   collection, getDocs, query, orderBy, where, limit,
-  onSnapshot, serverTimestamp
+  onSnapshot, serverTimestamp, getCountFromServer, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { firebaseConfig } from "./firebase-config.js";
@@ -125,6 +125,16 @@ export const Auth = {
     );
     // on conserve la casse choisie par l'utilisateur pour l'affichage
     await updateProfile(cred.user, { displayName: pseudo.trim() });
+
+    // un document minuscule par compte : permet de compter les inscrits
+    // sans exposer l'API d'authentification, et sans compteur falsifiable
+    try {
+      await setDoc(doc(db, "accounts", cred.user.uid), {
+        createdAt: serverTimestamp()
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Enregistrement du compte dans les statistiques :", err);
+    }
 
     // onAuthStateChanged s'est déclenché AVANT updateProfile : à ce
     // moment-là displayName était encore vide. On recharge le profil
@@ -631,4 +641,90 @@ export const Messages = {
   },
 
   myUid() { return Auth.current?.uid || null; }
+};
+
+
+/* ============================================================
+   STATISTIQUES : inscrits et présents
+
+   accounts/{uid}  { createdAt }   -> un document par compte
+   presence/{uid}  { lastSeen }    -> battement de cœur
+
+   Les deux comptages passent par getCountFromServer() : Firestore
+   renvoie le total sans transférer les documents, et facture une
+   seule lecture par millier d'éléments. Bien plus économique que
+   de lire la collection entière.
+
+   La "présence" est déduite d'un horodatage rafraîchi périodiquement :
+   Firestore n'offre pas de détection de déconnexion (contrairement à
+   Realtime Database). Quelqu'un qui ferme brutalement son navigateur
+   reste donc compté pendant deux minutes au plus.
+   ============================================================ */
+
+// Fenêtre volontairement large et battement espacé : chaque battement est
+// une écriture Firestore, et c'est le poste le plus coûteux de cette
+// fonctionnalité. 5 min / 2 min divise la facture par deux sans que
+// l'affichage en devienne trompeur.
+const PRESENCE_FENETRE = 5 * 60 * 1000;   // considéré en ligne : 5 minutes
+let heartbeat = null;
+
+export const Stats = {
+
+  /** Nombre total de comptes créés. */
+  async comptes() {
+    try {
+      const snap = await getCountFromServer(collection(db, "accounts"));
+      return snap.data().count;
+    } catch (err) {
+      console.warn("Comptage des inscrits :", err.code || err);
+      return null;
+    }
+  },
+
+  /** Nombre de personnes actives dans les deux dernières minutes. */
+  async enLigne() {
+    try {
+      const seuil = Timestamp.fromMillis(Date.now() - PRESENCE_FENETRE);
+      const q = query(collection(db, "presence"), where("lastSeen", ">", seuil));
+      const snap = await getCountFromServer(q);
+      return snap.data().count;
+    } catch (err) {
+      console.warn("Comptage des présents :", err.code || err);
+      return null;
+    }
+  },
+
+  /** Signale que l'utilisateur est là. Sans effet si non connecté. */
+  async ping() {
+    const user = Auth.current;
+    if (!user) return;
+    try {
+      await setDoc(doc(db, "presence", user.uid), {
+        lastSeen: serverTimestamp()
+      });
+    } catch { /* sans gravité */ }
+  },
+
+  /** Démarre le battement de cœur, uniquement quand l'onglet est visible. */
+  startHeartbeat() {
+    this.stopHeartbeat();
+    if (!Auth.current) return;
+
+    const battre = () => {
+      if (document.visibilityState === "visible") this.ping();
+    };
+    battre();
+    heartbeat = setInterval(battre, 120000);  // toutes les 2 minutes
+  },
+
+  stopHeartbeat() {
+    if (heartbeat) { clearInterval(heartbeat); heartbeat = null; }
+  },
+
+  /** Retire sa présence (à la déconnexion). */
+  async clearPresence() {
+    const user = Auth.current;
+    if (!user) return;
+    try { await deleteDoc(doc(db, "presence", user.uid)); } catch {}
+  }
 };
