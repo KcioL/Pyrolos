@@ -257,6 +257,36 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !lostModal.hidden) lostModal.hidden = true;
 });
 
+/* ---------------- Compteurs (inscrits / en ligne) ---------------- */
+
+async function refreshStats() {
+  const aEl = document.getElementById("pmw-stat-accounts");
+  const oEl = document.getElementById("pmw-stat-online");
+  if (!aEl || !oEl) return;
+
+  const [comptes, presents] = await Promise.all([Stats.comptes(), Stats.enLigne()]);
+
+  aEl.textContent = comptes === null
+    ? "\u{1F465} \u2013"
+    : `\u{1F465} ${comptes} inscrit${comptes > 1 ? "s" : ""}`;
+
+  oEl.innerHTML = presents === null
+    ? '<i class="pmw-live"></i> \u2013'
+    : `<i class="pmw-live"></i> ${presents} en ligne`;
+  oEl.classList.toggle("nobody", presents === 0);
+}
+
+// rafraîchissement périodique, uniquement quand l'onglet est visible
+setInterval(() => {
+  if (document.visibilityState === "visible") refreshStats();
+}, 120000);
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") refreshStats();
+});
+
+refreshStats();
+
 /* ---------------- Widget de notation ---------------- */
 
 /**
