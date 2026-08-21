@@ -146,6 +146,7 @@ async function init() {
   buildMap();
   render();
   renderRanking();
+  renderRouteRanking();
   renderBadges();
   initTabs();
   initSort();
@@ -458,7 +459,16 @@ let routeNotes = {};      // id -> { avg, count }
 
 async function renderRouteRanking() {
   const host = document.getElementById("pmw-ranking-routes");
-  if (!host || !ROUTES.length) return;
+  if (!host) return;
+
+  // sortir en silence rendait le bloc invisible sans expliquer pourquoi
+  if (!ROUTES.length) {
+    host.innerHTML = `<div class="pmw-empty">
+      Aucun itinéraire chargé. Vérifie que <code>itineraires.json</code> est
+      bien présent à côté de <code>index.html</code>.
+    </div>`;
+    return;
+  }
 
   host.innerHTML = `<div class="pmw-empty">Chargement des notes…</div>`;
 
