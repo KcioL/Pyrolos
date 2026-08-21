@@ -7,7 +7,7 @@
     "depart": "Sud de Pau",
     "desc": "Une boucle courte et roulante dans les coteaux du Béarn, au sud de Pau. Pas de haut col ici : des petites routes vallonnées qui enchaînent les courbes entre vignes et villages, avec Lasseube et Lacommande en points de mire. Le format idéal pour une sortie de fin de journée, ou pour prolonger une balade par une halte gourmande.",
     "cols": [],
-    "url": "https://www.google.com/maps/dir/?api=1&origin=43.306029,-0.403461&destination=43.306029,-0.403461&waypoints=43.309300,-0.476100%7C43.215100,-0.547600%7C43.198300,-0.608900%7C43.164600,-0.444100&travelmode=driving&avoid=tolls%7Chighways%7Cferries",
+    "url": "https://www.google.com/maps?saddr=43.306029,-0.403461&daddr=43.309300,-0.476100+to:43.215100,-0.547600+to:43.198300,-0.608900+to:43.164600,-0.444100+to:43.306029,-0.403461&dirflg=ht",
     "gpx": "gpx/itineraire-gourmand-lasseube-lacommande.gpx"
   },
   {
@@ -21,7 +21,7 @@
       "Col d'Aubisque",
       "Col du Soulor"
     ],
-    "url": "https://www.google.com/maps/dir/?api=1&origin=43.2951,-0.3708&destination=43.2951,-0.3708&waypoints=42.9772,-0.3383%7C42.9975,-0.2925%7C43.0056,-0.1006&travelmode=driving&avoid=tolls%7Chighways%7Cferries"
+    "url": "https://www.google.com/maps?saddr=43.2951,-0.3708&daddr=42.9772,-0.3383+to:42.9975,-0.2925+to:43.0056,-0.1006+to:43.2951,-0.3708&dirflg=ht"
   },
   {
     "nom": "Le triptyque de Bigorre",
@@ -34,7 +34,7 @@
       "Col d'Aspin",
       "Col du Tourmalet"
     ],
-    "url": "https://www.google.com/maps/dir/?api=1&origin=43.0642,0.1493&destination=43.0642,0.1493&waypoints=42.9397,0.3283%7C42.9106,0.1436%7C42.8730,-0.0043&travelmode=driving&avoid=tolls%7Chighways%7Cferries"
+    "url": "https://www.google.com/maps?saddr=43.0642,0.1493&daddr=42.9397,0.3283+to:42.9106,0.1436+to:42.8730,-0.0043+to:43.0642,0.1493&dirflg=ht"
   },
   {
     "nom": "Boucle du Luchonnais",
@@ -48,7 +48,7 @@
       "Port de Balès",
       "Col de Menté"
     ],
-    "url": "https://www.google.com/maps/dir/?api=1&origin=42.7906,0.5934&destination=42.7906,0.5934&waypoints=42.7908,0.4433%7C42.7717,0.5386%7C42.8214,0.7756&travelmode=driving&avoid=tolls%7Chighways%7Cferries"
+    "url": "https://www.google.com/maps?saddr=42.7906,0.5934&daddr=42.7908,0.4433+to:42.7717,0.5386+to:42.8214,0.7756+to:42.7906,0.5934&dirflg=ht"
   },
   {
     "nom": "Port de Pailhères et gorges de l'Aude",
@@ -60,7 +60,7 @@
     "cols": [
       "Port de Pailhères"
     ],
-    "url": "https://www.google.com/maps/dir/?api=1&origin=42.7196,1.8375&destination=42.7196,1.8375&waypoints=42.6822,1.9711%7C42.7683,2.1839&travelmode=driving&avoid=tolls%7Chighways%7Cferries"
+    "url": "https://www.google.com/maps?saddr=42.7196,1.8375&daddr=42.6822,1.9711+to:42.7683,2.1839+to:42.7196,1.8375&dirflg=ht"
   },
   {
     "nom": "Cols basques et villages rouges",
@@ -72,6 +72,6 @@
     "cols": [
       "Col d'Ispéguy"
     ],
-    "url": "https://www.google.com/maps/dir/?api=1&origin=43.1631,-1.2361&destination=43.1631,-1.2361&waypoints=43.1900,-1.3392%7C43.3122,-1.4457&travelmode=driving&avoid=tolls%7Chighways%7Cferries"
+    "url": "https://www.google.com/maps?saddr=43.1631,-1.2361&daddr=43.1900,-1.3392+to:43.3122,-1.4457+to:43.1631,-1.2361&dirflg=ht"
   }
 ]

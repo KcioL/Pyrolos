@@ -1381,15 +1381,22 @@ function openInGoogleMaps() {
   const pts = waypoints();
   if (pts.length < 2) return;
   const f = p => `${p.lat},${p.lon}`;
-  const params = new URLSearchParams({
-    api: "1", travelmode: "driving",
-    origin: f(pts[0]),
-    destination: f(pts[pts.length - 1]),
-    avoid: "tolls|highways|ferries"   // petites routes, comme sur le tracé
-  });
-  const mid = pts.slice(1, -1).slice(0, 9);
-  if (mid.length) params.set("waypoints", mid.map(f).join("|"));
-  window.open(`https://www.google.com/maps/dir/?${params}`, "_blank", "noopener");
+
+  /* On utilise le format HÉRITÉ de Google Maps (saddr / daddr / dirflg)
+     et non le format `api=1`. Raison : `dirflg` est la seule option
+     d'URL qui permette réellement d'éviter autoroutes et péages.
+       h = éviter les autoroutes
+       t = éviter les péages
+     Le paramètre `avoid` du format api=1 appartient à l'API Directions
+     (payante, côté serveur) : dans une URL, Google l'ignore purement et
+     simplement — le trajet repassait donc par l'autoroute. */
+  const etapes = pts.slice(1).slice(0, 9).map(f);
+  const url = "https://www.google.com/maps"
+            + `?saddr=${f(pts[0])}`
+            + `&daddr=${etapes.join("+to:")}`
+            + "&dirflg=ht";
+
+  window.open(url, "_blank", "noopener");
 }
 
 /* =========================================================================
