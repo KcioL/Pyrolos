@@ -59,6 +59,7 @@
     <span class="pmw-account-state" id="pmw-account-state">Non connecté</span>
     <button class="pmw-btn pmw-btn-ghost" id="pmw-login-btn">Se connecter</button>
     <button class="pmw-btn pmw-btn-ghost" id="pmw-logout-btn" hidden>Se déconnecter</button>
+    <button class="pmw-btn pmw-btn-danger" id="pmw-delete-account-btn" hidden>Supprimer mon compte</button>
   </div>
 
   <!-- ============ NAVIGATION PAR ONGLETS ============ -->
@@ -409,6 +410,44 @@
       </div>
       <div class="pmw-modal-links">
         <button class="pmw-link" id="pmw-card-delete" hidden>Retirer ma fiche</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODALE SUPPRESSION DE COMPTE ============ -->
+  <div class="pmw-modal" id="pmw-del-modal" hidden>
+    <div class="pmw-modal-backdrop" data-del-close></div>
+    <div class="pmw-modal-box" role="alertdialog" aria-modal="true" aria-labelledby="pmw-del-title">
+      <button class="pmw-modal-close" data-del-close aria-label="Fermer">&times;</button>
+      <h2 class="pmw-modal-title" id="pmw-del-title">Supprimer mon compte</h2>
+
+      <div class="pmw-warn pmw-warn-strong">
+        <strong>Cette action est définitive.</strong>
+        Seront effacés : ton compte, ta progression et tes succès, tes
+        itinéraires enregistrés, ta fiche « rouler ensemble » et les notes que
+        tu as laissées sur les cols. Rien ne pourra être restauré.
+      </div>
+
+      <p class="pmw-del-note">
+        Tes messages déjà envoyés resteront visibles par leurs destinataires :
+        ils font partie de leur conversation.
+      </p>
+
+      <div class="pmw-field">
+        <label for="pmw-del-pass">Confirme avec ton mot de passe</label>
+        <input type="password" id="pmw-del-pass" autocomplete="current-password" placeholder="Ton mot de passe">
+      </div>
+
+      <div class="pmw-field">
+        <label for="pmw-del-word">Écris <b>SUPPRIMER</b> pour confirmer</label>
+        <input type="text" id="pmw-del-word" autocomplete="off" placeholder="SUPPRIMER">
+      </div>
+
+      <div class="pmw-modal-error" id="pmw-del-error" hidden></div>
+
+      <div class="pmw-modal-actions">
+        <button class="pmw-btn-cancel" data-del-close>Annuler</button>
+        <button class="pmw-btn pmw-btn-danger" id="pmw-del-confirm" disabled>Supprimer définitivement</button>
       </div>
     </div>
   </div>

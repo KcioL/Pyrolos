@@ -6,7 +6,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged, updateProfile
+  signOut, onAuthStateChanged, updateProfile,
+  deleteUser, reauthenticateWithCredential, EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, deleteDoc, getDoc, addDoc, updateDoc,
@@ -756,5 +757,73 @@ export const Stats = {
     const user = Auth.current;
     if (!user) return;
     try { await deleteDoc(doc(db, "presence", user.uid)); } catch {}
+  }
+};
+
+
+/* ============================================================
+   SUPPRESSION DE COMPTE
+
+   Firebase exige une authentification RÉCENTE pour supprimer un
+   compte : on redemande donc le mot de passe et on ré-authentifie
+   avant l'opération.
+
+   L'ordre compte : on efface d'abord les données Firestore, tant
+   qu'on est encore authentifié et donc autorisé à écrire, puis le
+   compte lui-même. L'inverse laisserait des données orphelines
+   impossibles à supprimer.
+   ============================================================ */
+
+export const Account = {
+
+  /**
+   * Supprime définitivement le compte et ses données.
+   * @param {string} password mot de passe, pour la ré-authentification
+   * @param {string[]} colIds identifiants des cols (pour retirer les notes)
+   * @returns {Promise<{restant: string[]}>} ce qui n'a pas pu être supprimé
+   */
+  async destroy(password, colIds = []) {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+
+    // 1. ré-authentification
+    const cred = EmailAuthProvider.credential(user.email, password);
+    await reauthenticateWithCredential(user, cred);
+
+    const uid = user.uid;
+    const restant = [];
+    const essayer = async (libelle, fn) => {
+      try { await fn(); } catch (err) {
+        console.warn("Suppression —", libelle, ":", err.code || err);
+        restant.push(libelle);
+      }
+    };
+
+    // 2. itinéraires personnels (sous-collection à vider avant le parent)
+    await essayer("itinéraires", async () => {
+      const snap = await getDocs(collection(db, "users", uid, "trips"));
+      await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+    });
+
+    // 3. profil (cols roulés)
+    await essayer("progression", () => deleteDoc(doc(db, "users", uid)));
+
+    // 4. fiche « rouler ensemble »
+    await essayer("fiche motard", () => deleteDoc(doc(db, "riders", uid)));
+
+    // 5. notes laissées sur les cols
+    await essayer("notes", async () => {
+      await Promise.all(colIds.map(id =>
+        deleteDoc(doc(db, "cols", id, "ratings", uid)).catch(() => {})));
+    });
+
+    // 6. présence et inscription
+    await essayer("présence", () => deleteDoc(doc(db, "presence", uid)));
+    await essayer("inscription", () => deleteDoc(doc(db, "accounts", uid)));
+
+    // 7. le compte lui-même, en dernier
+    await deleteUser(user);
+
+    return { restant };
   }
 };

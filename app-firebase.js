@@ -3,7 +3,7 @@
 //  Fait le lien entre pyrolos-firebase.js et le DOM.
 // =============================================================
 
-import { Auth, Ratings, Ridden, Trips, Riders, Messages, Stats, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
+import { Auth, Ratings, Ridden, Trips, Riders, Messages, Stats, Account, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
 
 const $ = id => document.getElementById(id);
 
@@ -14,7 +14,7 @@ const $ = id => document.getElementById(id);
    toucher si tu veux un ton plus doux ou plus salé.
    ============================================================= */
 const LOST_PASSWORD = {
-  titre: "T'es un énorme débile !!",
+  titre: "T'es un énorme troller !!",
   texte: "Je t'avais dit d'enregistrer ton mot de passe quelque part. " +
          "Maintenant ton compte est perdu. Tocard.<br><br>" +
          "Plus qu'à recréer un compte avec un autre pseudo… et à le noter, cette fois."
@@ -25,6 +25,7 @@ const LOST_PASSWORD = {
 const stateEl  = $("pmw-account-state");
 const loginBtn = $("pmw-login-btn");
 const logoutBtn= $("pmw-logout-btn");
+const delAccountBtn = $("pmw-delete-account-btn");
 
 Auth.onChange(async user => {
   if (user) {
@@ -32,11 +33,13 @@ Auth.onChange(async user => {
     stateEl.classList.add("connected");
     loginBtn.hidden = true;
     logoutBtn.hidden = false;
+    delAccountBtn.hidden = false;
   } else {
     stateEl.textContent = "Non connecté";
     stateEl.classList.remove("connected");
     loginBtn.hidden = false;
     logoutBtn.hidden = true;
+    delAccountBtn.hidden = true;
   }
   Ratings.clearCache();
 
@@ -261,6 +264,74 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !lostModal.hidden) lostModal.hidden = true;
 });
 
+/* ---------------- Suppression de compte ---------------- */
+
+const delModal   = $("pmw-del-modal");
+const delPass    = $("pmw-del-pass");
+const delWord    = $("pmw-del-word");
+const delConfirm = $("pmw-del-confirm");
+const delError   = $("pmw-del-error");
+
+delAccountBtn.addEventListener("click", () => {
+  delPass.value = ""; delWord.value = "";
+  delError.hidden = true;
+  delConfirm.disabled = true;
+  delConfirm.textContent = "Supprimer définitivement";
+  delModal.hidden = false;
+  setTimeout(() => delPass.focus(), 40);
+});
+
+delModal.addEventListener("click", e => {
+  if (e.target.hasAttribute("data-del-close")) delModal.hidden = true;
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !delModal.hidden) delModal.hidden = true;
+});
+
+/* Le bouton ne s'active que si le mot de passe est saisi ET que
+   "SUPPRIMER" est écrit : deux gestes volontaires, pour une action
+   qu'on ne peut pas annuler. */
+function majDelBtn() {
+  delConfirm.disabled =
+    delPass.value.length === 0 || delWord.value.trim().toUpperCase() !== "SUPPRIMER";
+}
+delPass.addEventListener("input", majDelBtn);
+delWord.addEventListener("input", majDelBtn);
+
+delConfirm.addEventListener("click", async () => {
+  delConfirm.disabled = true;
+  delConfirm.textContent = "Suppression…";
+  delError.hidden = true;
+
+  try {
+    // on coupe les écoutes avant de perdre les droits d'accès
+    if (window.pyrolosStopListeners) window.pyrolosStopListeners();
+    Stats.stopHeartbeat();
+
+    const colIds = (window.pyrolosColIds && window.pyrolosColIds()) || [];
+    const { restant } = await Account.destroy(delPass.value, colIds);
+
+    delModal.hidden = true;
+    if (restant.length) {
+      console.warn("Éléments non supprimés :", restant.join(", "));
+    }
+    // Firebase déclenche onAuthStateChanged(null) : l'interface se remet
+    // d'elle-même à l'état déconnecté. On rafraîchit le compteur.
+    setTimeout(refreshStats, 400);
+  } catch (err) {
+    console.error(err);
+    delError.hidden = false;
+    delError.textContent =
+      err.code === "auth/invalid-credential" || err.code === "auth/wrong-password"
+        ? "Mot de passe incorrect."
+      : err.code === "auth/too-many-requests"
+        ? "Trop de tentatives. Réessaie dans quelques minutes."
+      : "Suppression impossible. Réessaie.";
+    delConfirm.textContent = "Supprimer définitivement";
+    majDelBtn();
+  }
+});
+
 /* ---------------- Compteurs (inscrits / en ligne) ---------------- */
 
 async function refreshStats() {
@@ -367,6 +438,7 @@ export async function mountRating(host, col) {
 // exposés pour script.js, qui n'est pas un module
 window.PyrolosRating = { mount: mountRating, openLogin: () => openModal("login") };
 window.PyrolosRidden = Ridden;
+window.PyrolosColId = colId;
 window.PyrolosMessages = {
   isSignedIn: () => !!Auth.current,
   myUid: () => Messages.myUid(),

@@ -1420,6 +1420,13 @@ async function confirmDeleteCard(e) {
 // rechargement à la connexion / déconnexion
 window.pyrolosRefreshRiders = loadRiders;
 
+/** Identifiants de tous les cols — sert au nettoyage des notes
+    lors d'une suppression de compte. */
+window.pyrolosColIds = function () {
+  return COLS.map(c => (window.PyrolosColId ? window.PyrolosColId(c) : null))
+             .filter(Boolean);
+};
+
 /* =========================================================================
    MESSAGERIE
    ========================================================================= */
