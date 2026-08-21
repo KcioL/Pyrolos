@@ -510,21 +510,22 @@ export const Messages = {
 
     const id = this.convId(otherUid);
     const ref = doc(db, "conversations", id);
-    const snap = await getDoc(ref);
 
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        participants: [me.uid, otherUid].sort(),
-        pseudos: {
-          [me.uid]: displayNameOf(me).slice(0, 40),
-          [otherUid]: (otherPseudo || "Motard").slice(0, 40)
-        },
-        lastText: "",
-        lastFrom: "",
-        lastAt: serverTimestamp(),
-        read: { [me.uid]: true, [otherUid]: true }
-      });
-    }
+    // Aucune lecture préalable : on écrit directement en mode `merge`.
+    // - si la conversation n'existe pas, elle est créée ;
+    // - si elle existe, seuls ces champs sont mis à jour, l'historique
+    //   et la date du dernier message restent intacts.
+    // On évite ainsi une lecture Firestore ET le cas délicat de la
+    // lecture d'un document inexistant, que les règles doivent
+    // autoriser explicitement.
+    await setDoc(ref, {
+      participants: [me.uid, otherUid].sort(),
+      pseudos: {
+        [me.uid]: displayNameOf(me).slice(0, 40),
+        [otherUid]: (otherPseudo || "Motard").slice(0, 40)
+      }
+    }, { merge: true });
+
     return id;
   },
 
@@ -556,13 +557,19 @@ export const Messages = {
       createdAt: serverTimestamp()
     });
 
-    await updateDoc(ref, {
+    // setDoc + merge plutôt qu'updateDoc : ce dernier échoue si le
+    // document n'existe pas encore, ce qui perdrait le message qui vient
+    // d'être écrit. Avec merge, la conversation est créée au besoin.
+    await setDoc(ref, {
+      participants,
       lastText: body.slice(0, 120),
       lastFrom: me.uid,
       lastAt: serverTimestamp(),
-      [`read.${me.uid}`]: true,
-      [`read.${other}`]: false      // marque non lu pour le destinataire
-    });
+      read: {
+        [me.uid]: true,
+        [other]: false             // marque non lu pour le destinataire
+      }
+    }, { merge: true });
   },
 
   /** Écoute la liste des conversations de l'utilisateur (temps réel). */
@@ -578,7 +585,16 @@ export const Messages = {
     );
     return onSnapshot(q,
       snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-      err => { console.error("Conversations :", err); callback([]); });
+      err => {
+        console.error("Conversations :", err);
+        if (err.code === "failed-precondition") {
+          console.error(
+            "[Pyrolos] Index Firestore manquant : clique sur le lien ci-dessus " +
+            "pour le créer (collection conversations, participants + lastAt)."
+          );
+        }
+        callback([]);
+      });
   },
 
   /** Écoute les messages d'une conversation (temps réel). */
@@ -591,7 +607,16 @@ export const Messages = {
     );
     return onSnapshot(q,
       snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-      err => { console.error("Messages :", err); callback([]); });
+      err => {
+        console.error("Messages :", err);
+        if (err.code === "permission-denied") {
+          console.error(
+            "[Pyrolos] Règles Firestore non à jour : recolle firestore.rules " +
+            "dans la console (Firestore Database > Règles > Publier)."
+          );
+        }
+        callback([]);
+      });
   },
 
   /** Marque la conversation comme lue pour l'utilisateur courant. */
@@ -599,9 +624,9 @@ export const Messages = {
     const me = Auth.current;
     if (!me) return;
     try {
-      await updateDoc(doc(db, "conversations", convId), {
-        [`read.${me.uid}`]: true
-      });
+      await setDoc(doc(db, "conversations", convId), {
+        read: { [me.uid]: true }
+      }, { merge: true });
     } catch { /* sans gravité */ }
   },
 
