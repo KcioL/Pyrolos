@@ -1,0 +1,12 @@
+[
+  { "nom": "Pau",              "alt": 207, "lat": 43.2951, "lon": -0.3708 },
+  { "nom": "Tarbes",           "alt": 304, "lat": 43.2328, "lon": 0.0781 },
+  { "nom": "Bayonne",          "alt": 12,  "lat": 43.4933, "lon": -1.4748 },
+  { "nom": "Lourdes",          "alt": 420, "lat": 43.0951, "lon": -0.0459 },
+  { "nom": "Bagnères-de-Luchon","alt": 630, "lat": 42.7906, "lon": 0.5934 },
+  { "nom": "Saint-Jean-Pied-de-Port", "alt": 176, "lat": 43.1631, "lon": -1.2361 },
+  { "nom": "Foix",             "alt": 375, "lat": 42.9660, "lon": 1.6053 },
+  { "nom": "Ax-les-Thermes",   "alt": 720, "lat": 42.7196, "lon": 1.8375 },
+  { "nom": "Argelès-Gazost",   "alt": 463, "lat": 43.0056, "lon": -0.1006 },
+  { "nom": "Saint-Gaudens",    "alt": 400, "lat": 43.1080, "lon": 0.7233 }
+]

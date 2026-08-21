@@ -68,6 +68,7 @@
     <button class="pmw-tab" data-view="itineraires">Itinéraires</button>
     <button class="pmw-tab" data-view="riders">Rouler ensemble</button>
     <button class="pmw-tab" data-view="messages">Messages <span class="pmw-badge-dot" id="pmw-msg-dot" hidden></span></button>
+    <button class="pmw-tab" data-view="meteo">Météo</button>
     <button class="pmw-tab" data-view="classement">Classement</button>
     <button class="pmw-tab" data-view="succes">Succès</button>
   </nav>
@@ -262,6 +263,29 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <!-- ============ VUE MÉTÉO ============ -->
+  <section class="pmw-view" id="view-meteo" hidden>
+    <div class="pmw-section-head">
+      <h2>Météo</h2>
+      <p class="pmw-section-sub">
+        Conditions actuelles et prévisions sur trois jours, dans les vallées
+        et au sommet des cols. Données Open-Meteo, actualisées en direct.
+      </p>
+      <div class="pmw-meteo-bar">
+        <div class="pmw-modes" id="pmw-meteo-modes">
+          <button class="pmw-mode active" data-meteo="cols">Cols</button>
+          <button class="pmw-mode" data-meteo="villes">Villes</button>
+        </div>
+        <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" id="pmw-meteo-refresh">↻ Actualiser</button>
+      </div>
+    </div>
+
+    <div class="pmw-meteo-grid" id="pmw-meteo-grid">
+      <div class="pmw-empty">Chargement de la météo…</div>
+    </div>
+    <p class="pmw-meteo-note" id="pmw-meteo-note"></p>
   </section>
 
   <!-- ============ VUE CLASSEMENT ============ -->

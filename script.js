@@ -114,6 +114,7 @@ async function init() {
   }
 
   await loadRoutes();
+  await loadVilles();
   buildStats();
   buildMassifChips();
   buildMap();
@@ -125,6 +126,7 @@ async function init() {
   initBuilder();
   initRiders();
   initMessages();
+  initMeteo();
 }
 
 /* ---------- Stats & filtres (vue Carte) ---------- */
@@ -1666,6 +1668,183 @@ window.pyrolosStopListeners = function () {
   activeConv = null;
 };
 
+/* =========================================================================
+   MÉTÉO
+   Open-Meteo accepte plusieurs coordonnées dans une seule requête :
+   tout l'onglet tient donc en un appel réseau, sans clé d'API.
+   ========================================================================= */
+
+let VILLES = [];
+let meteoMode = "cols";
+let meteoCache = {};        // { cols: [...], villes: [...] }
+
+const METEO_TEXTE = {
+  0:"Ciel dégagé", 1:"Peu nuageux", 2:"Partiellement nuageux", 3:"Couvert",
+  45:"Brouillard", 48:"Brouillard givrant",
+  51:"Bruine légère", 53:"Bruine", 55:"Bruine forte",
+  56:"Bruine verglaçante", 57:"Bruine verglaçante",
+  61:"Pluie faible", 63:"Pluie", 65:"Pluie forte",
+  66:"Pluie verglaçante", 67:"Pluie verglaçante",
+  71:"Neige faible", 73:"Neige", 75:"Neige forte", 77:"Grains de neige",
+  80:"Averses", 81:"Averses", 82:"Fortes averses",
+  85:"Averses de neige", 86:"Fortes averses de neige",
+  95:"Orage", 96:"Orage et grêle", 99:"Orage et grêle"
+};
+
+/** Conditions défavorables à la moto : on le signale explicitement. */
+function alerteMoto(code, vent, tmin) {
+  if ([56,57,66,67].includes(code)) return { txt: "Verglas", niv: "danger" };
+  if ([71,73,75,77,85,86].includes(code)) return { txt: "Neige", niv: "danger" };
+  if ([95,96,99].includes(code)) return { txt: "Orage", niv: "danger" };
+  if (vent >= 50) return { txt: "Vent fort", niv: "danger" };
+  if (tmin !== null && tmin <= 2) return { txt: "Risque de gel", niv: "warn" };
+  if ([63,65,81,82].includes(code)) return { txt: "Pluie", niv: "warn" };
+  if (vent >= 35) return { txt: "Vent soutenu", niv: "warn" };
+  return null;
+}
+
+async function loadVilles() {
+  try {
+    const res = await fetch("villes.json");
+    if (!res.ok) throw new Error(res.status);
+    VILLES = await res.json();
+  } catch (err) {
+    console.warn("villes.json introuvable :", err);
+    VILLES = [];
+  }
+}
+
+function initMeteo() {
+  const grid = document.getElementById("pmw-meteo-grid");
+  if (!grid) return;
+
+  document.querySelectorAll("[data-meteo]").forEach(b =>
+    b.addEventListener("click", () => {
+      meteoMode = b.dataset.meteo;
+      document.querySelectorAll("[data-meteo]").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      renderMeteo();
+    }));
+
+  document.getElementById("pmw-meteo-refresh")
+    .addEventListener("click", () => { meteoCache = {}; renderMeteo(); });
+}
+
+/** Récupère la météo de plusieurs points en une seule requête. */
+async function fetchMeteo(points) {
+  const lats = points.map(p => p.lat.toFixed(4)).join(",");
+  const lons = points.map(p => p.lon.toFixed(4)).join(",");
+  const url = "https://api.open-meteo.com/v1/forecast"
+    + `?latitude=${lats}&longitude=${lons}`
+    + "&current=temperature_2m,weather_code,wind_speed_10m,apparent_temperature"
+    + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum"
+    + "&forecast_days=3&timezone=Europe%2FParis";
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Open-Meteo " + res.status);
+  const data = await res.json();
+
+  // avec un seul point, l'API renvoie un objet ; avec plusieurs, un tableau
+  const liste = Array.isArray(data) ? data : [data];
+  return points.map((p, i) => ({ ...p, meteo: liste[i] }));
+}
+
+async function renderMeteo() {
+  const grid = document.getElementById("pmw-meteo-grid");
+  const note = document.getElementById("pmw-meteo-note");
+  if (!grid) return;
+
+  const points = meteoMode === "cols" ? COLS : VILLES;
+  if (!points.length) {
+    grid.innerHTML = `<div class="pmw-empty">Aucun lieu à afficher.</div>`;
+    return;
+  }
+
+  if (meteoCache[meteoMode]) {
+    afficherMeteo(meteoCache[meteoMode]);
+    return;
+  }
+
+  grid.innerHTML = `<div class="pmw-empty">Chargement de la météo…</div>`;
+  note.textContent = "";
+
+  try {
+    const resultats = await fetchMeteo(points);
+    meteoCache[meteoMode] = resultats;
+    afficherMeteo(resultats);
+  } catch (err) {
+    console.error(err);
+    grid.innerHTML = `<div class="pmw-empty">
+      Météo indisponible pour le moment. Le service est peut-être saturé,
+      réessaie dans un instant.
+    </div>`;
+  }
+}
+
+function afficherMeteo(resultats) {
+  const grid = document.getElementById("pmw-meteo-grid");
+  const note = document.getElementById("pmw-meteo-note");
+
+  grid.innerHTML = resultats.map(p => {
+    const m = p.meteo;
+    if (!m || !m.current) {
+      return `<div class="pmw-meteo-card"><h3>${escapeHtml(p.nom)}</h3>
+              <div class="pmw-meteo-ko">Données indisponibles</div></div>`;
+    }
+
+    const c = m.current;
+    const d = m.daily || {};
+    const code = c.weather_code;
+    const vent = Math.round(c.wind_speed_10m);
+    const tmin = d.temperature_2m_min ? Math.round(d.temperature_2m_min[0]) : null;
+    const alerte = alerteMoto(code, vent, tmin);
+
+    const jours = (d.time || []).slice(0, 3).map((iso, i) => {
+      const dt = new Date(iso);
+      const nom = i === 0 ? "Auj." :
+        dt.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
+      return `
+        <div class="pmw-meteo-day">
+          <span class="d">${nom}</span>
+          <span class="i">${WEATHER_ICONS[d.weather_code[i]] || "🌡️"}</span>
+          <span class="t">${Math.round(d.temperature_2m_max[i])}° <em>${Math.round(d.temperature_2m_min[i])}°</em></span>
+          ${d.precipitation_sum[i] > 0.2
+            ? `<span class="p">${d.precipitation_sum[i].toFixed(1)} mm</span>`
+            : `<span class="p">–</span>`}
+        </div>`;
+    }).join("");
+
+    return `
+      <div class="pmw-meteo-card ${alerte ? "has-" + alerte.niv : ""}">
+        <div class="pmw-meteo-head">
+          <div>
+            <h3>${escapeHtml(p.nom)}</h3>
+            <span class="pmw-meteo-alt">${p.alt} m${p.massif ? " · " + escapeHtml(p.massif) : ""}</span>
+          </div>
+          ${alerte ? `<span class="pmw-meteo-alert ${alerte.niv}">${alerte.txt}</span>` : ""}
+        </div>
+
+        <div class="pmw-meteo-now">
+          <span class="pmw-meteo-icon">${WEATHER_ICONS[code] || "🌡️"}</span>
+          <div>
+            <b>${Math.round(c.temperature_2m)}°C</b>
+            <span>${METEO_TEXTE[code] || "—"}</span>
+          </div>
+          <div class="pmw-meteo-side">
+            <span>💨 ${vent} km/h</span>
+            <span>ressenti ${Math.round(c.apparent_temperature)}°</span>
+          </div>
+        </div>
+
+        <div class="pmw-meteo-days">${jours}</div>
+      </div>`;
+  }).join("");
+
+  const maj = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  note.textContent = `Relevé de ${maj} · données Open-Meteo · `
+    + `la météo d'un col peut changer très vite, vérifie avant de partir.`;
+}
+
 /* ---------- Onglets ---------- */
 
 function initTabs() {
@@ -1675,6 +1854,7 @@ function initTabs() {
     itineraires: document.getElementById("view-itineraires"),
     riders: document.getElementById("view-riders"),
     messages: document.getElementById("view-messages"),
+    meteo: document.getElementById("view-meteo"),
     classement: document.getElementById("view-classement"),
     succes: document.getElementById("view-succes")
   };
@@ -1689,6 +1869,7 @@ function initTabs() {
       if (tab.dataset.view === "carte" && map) {
         setTimeout(() => map.invalidateSize(), 50);
       }
+      if (tab.dataset.view === "meteo") renderMeteo();
       if (tab.dataset.view === "itineraires" && builderMap) {
         setTimeout(() => builderMap.invalidateSize(), 50);
       }
