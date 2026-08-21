@@ -323,15 +323,45 @@
 
   <!-- ============ VUE CLASSEMENT ============ -->
   <section class="pmw-view" id="view-classement" hidden>
-    <div class="pmw-section-head">
-      <h2>Classement des cols</h2>
-      <div class="pmw-sort" id="pmw-sort">
-        <button class="pmw-chip active" data-sort="note">Note motards</button>
-        <button class="pmw-chip" data-sort="alt">Altitude</button>
-        <button class="pmw-chip" data-sort="nom">Alphabétique</button>
-      </div>
+
+    <!-- sous-onglets : cols / itinéraires -->
+    <div class="pmw-subtabs">
+      <button class="pmw-subtab active" data-rank="cols">⛰️ Cols</button>
+      <button class="pmw-subtab" data-rank="routes">🏍️ Itinéraires</button>
     </div>
-    <div class="pmw-ranking" id="pmw-ranking"></div>
+
+    <!-- classement des cols -->
+    <div class="pmw-rank-panel" id="rank-cols">
+      <div class="pmw-section-head">
+        <h2>Classement des cols</h2>
+        <p class="pmw-section-sub">
+          Notes données par les motards. Un col sans vote reste sans note :
+          rien n'est inventé.
+        </p>
+        <div class="pmw-sort" id="pmw-sort">
+          <button class="pmw-chip active" data-sort="note">Note motards</button>
+          <button class="pmw-chip" data-sort="alt">Altitude</button>
+          <button class="pmw-chip" data-sort="nom">Alphabétique</button>
+        </div>
+      </div>
+      <div class="pmw-ranking" id="pmw-ranking"></div>
+    </div>
+
+    <!-- classement des itinéraires -->
+    <div class="pmw-rank-panel" id="rank-routes" hidden>
+      <div class="pmw-section-head">
+        <h2>Classement des itinéraires</h2>
+        <p class="pmw-section-sub">
+          Les parcours du site, notés par ceux qui les ont roulés.
+        </p>
+        <div class="pmw-sort" id="pmw-sort-routes">
+          <button class="pmw-chip active" data-rsort="note">Note motards</button>
+          <button class="pmw-chip" data-rsort="km">Distance</button>
+          <button class="pmw-chip" data-rsort="nom">Alphabétique</button>
+        </div>
+      </div>
+      <div class="pmw-ranking" id="pmw-ranking-routes"></div>
+    </div>
   </section>
 
   <!-- ============ VUE SUCCÈS ============ -->

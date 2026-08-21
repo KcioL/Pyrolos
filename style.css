@@ -1309,3 +1309,29 @@ body{
   transition:.14s;
 }
 .pmw-rt-clear:hover{ border-color:#b3574a; color:#e0a08a; background:rgba(179,87,74,.1); }
+
+
+/* ---------- SOUS-ONGLETS DU CLASSEMENT ---------- */
+.pmw-subtabs{
+  display:flex; gap:8px; flex-wrap:wrap;
+  padding:22px 32px 0;
+}
+.pmw-subtab{
+  display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  font-family:'Work Sans',sans-serif; font-size:13px; font-weight:600;
+  padding:10px 18px; border-radius:22px; transition:.15s;
+  background:var(--night-900); border:1px solid var(--line); color:var(--text-muted);
+}
+.pmw-subtab:hover{ border-color:var(--sage); color:var(--text-primary); }
+.pmw-subtab.active{
+  background:var(--sage); border-color:var(--sage); color:#16210f;
+}
+.pmw-subtab:focus-visible{ outline:2px solid var(--slate-blue); outline-offset:2px; }
+
+.pmw-rank-panel[hidden]{ display:none; }
+.pmw-rank-panel .pmw-section-head{ padding-top:20px; }
+
+@media(max-width:640px){
+  .pmw-subtabs{ padding:18px 20px 0; }
+  .pmw-subtab{ flex:1; justify-content:center; padding:10px 12px; font-size:12.5px; }
+}

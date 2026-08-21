@@ -151,6 +151,7 @@ async function init() {
   initTabs();
   initSort();
   initRouteSort();
+  initRankTabs();
   initBuilder();
   initRiders();
   initMessages();
@@ -507,6 +508,27 @@ async function renderRouteRanking() {
         <div class="pmw-rank-alt">${r.km ? r.km + " km" : "–"}</div>
       </div>`;
   }).join("");
+}
+
+/** Sous-onglets du classement : cols / itinéraires. */
+function initRankTabs() {
+  const tabs = document.querySelectorAll(".pmw-subtab");
+  if (!tabs.length) return;
+  const panneaux = {
+    cols: document.getElementById("rank-cols"),
+    routes: document.getElementById("rank-routes")
+  };
+  tabs.forEach(t =>
+    t.addEventListener("click", () => {
+      tabs.forEach(x => x.classList.remove("active"));
+      t.classList.add("active");
+      Object.entries(panneaux).forEach(([cle, el]) => {
+        if (el) el.hidden = cle !== t.dataset.rank;
+      });
+      // on ne recharge que ce qui devient visible
+      if (t.dataset.rank === "routes") renderRouteRanking();
+      else renderRanking();
+    }));
 }
 
 function initRouteSort() {
@@ -2506,7 +2528,11 @@ function initTabs() {
         setTimeout(() => map.invalidateSize(), 50);
       }
       if (tab.dataset.view === "meteo") renderMeteo();
-      if (tab.dataset.view === "classement") renderRouteRanking();
+      if (tab.dataset.view === "classement") {
+        const actif = document.querySelector(".pmw-subtab.active");
+        if (actif && actif.dataset.rank === "routes") renderRouteRanking();
+        else renderRanking();
+      }
       if (tab.dataset.view === "itineraires" && builderMap) {
         setTimeout(() => builderMap.invalidateSize(), 50);
       }
