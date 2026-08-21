@@ -64,7 +64,13 @@ Auth.onChange(async user => {
 });
 
 loginBtn.addEventListener("click", () => openModal("login"));
-logoutBtn.addEventListener("click", () => Auth.logout());
+logoutBtn.addEventListener("click", async () => {
+  // on coupe d'abord les écoutes Firestore, sinon elles survivent une
+  // fraction de seconde à la déconnexion et déclenchent une erreur de
+  // permission (sans gravité, mais polluante en console)
+  if (window.pyrolosStopListeners) window.pyrolosStopListeners();
+  await Auth.logout();
+});
 
 /* ---------------- Modale ---------------- */
 

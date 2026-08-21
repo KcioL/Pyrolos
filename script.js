@@ -1547,7 +1547,19 @@ async function sendMessage() {
     await window.PyrolosMessages.send(activeConv, text);
   } catch (err) {
     console.error(err);
-    input.value = text;   // on rend le texte à l'utilisateur en cas d'échec
+    input.value = text;   // on rend le texte à l'utilisateur
+
+    // Un message qui disparaît sans explication est déroutant :
+    // on affiche la raison dans le fil.
+    const body = document.getElementById("pmw-thread-body");
+    const msg = document.createElement("div");
+    msg.className = "pmw-send-error";
+    msg.textContent = err.code === "permission-denied"
+      ? "Message non envoyé : les règles Firestore ne sont pas à jour."
+      : "Message non envoyé. Vérifie ta connexion et réessaie.";
+    body.appendChild(msg);
+    body.scrollTop = body.scrollHeight;
+    setTimeout(() => msg.remove(), 6000);
   }
 }
 
@@ -1587,6 +1599,20 @@ function formatMsgDate(ts) {
 }
 
 window.pyrolosRefreshMessages = watchConversations;
+
+/**
+ * Coupe les écoutes temps réel.
+ * Appelé AVANT la déconnexion : sans cela, les listeners restent actifs
+ * pendant que l'authentification disparaît, et Firestore refuse la
+ * permission — d'où une erreur rouge en console, sans conséquence mais
+ * trompeuse.
+ */
+window.pyrolosStopListeners = function () {
+  if (unsubConvs) { unsubConvs(); unsubConvs = null; }
+  if (unsubMsgs)  { unsubMsgs();  unsubMsgs = null; }
+  CONVS = [];
+  activeConv = null;
+};
 
 /* ---------- Onglets ---------- */
 
