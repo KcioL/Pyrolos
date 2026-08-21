@@ -59,8 +59,12 @@ Auth.onChange(async user => {
   if (window.pyrolosRefreshMessages) window.pyrolosRefreshMessages();
 
   // présence : on signale son arrivée, ou on cesse de battre
-  if (user) Stats.startHeartbeat();
-  else Stats.stopHeartbeat();
+  if (user) {
+    await Stats.ensureAccount();      // rattrape les comptes anciens
+    await Stats.startHeartbeat();     // attend le premier signal
+  } else {
+    Stats.stopHeartbeat();
+  }
   refreshStats();
 
   // rafraîchir le widget de notation si une fiche est ouverte

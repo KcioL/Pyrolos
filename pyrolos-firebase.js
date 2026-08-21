@@ -694,6 +694,24 @@ export const Stats = {
     }
   },
 
+  /**
+   * S'assure que le compte possède son document dans `accounts`.
+   * Appelé à chaque connexion et pas seulement à l'inscription : cela
+   * rattrape les comptes créés avant l'ajout de cette collection.
+   * `merge` préserve la date de création d'origine.
+   */
+  async ensureAccount() {
+    const user = Auth.current;
+    if (!user) return;
+    try {
+      await setDoc(doc(db, "accounts", user.uid), {
+        createdAt: serverTimestamp()
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Enregistrement du compte :", err.code || err);
+    }
+  },
+
   /** Signale que l'utilisateur est là. Sans effet si non connecté. */
   async ping() {
     const user = Auth.current;
@@ -702,18 +720,30 @@ export const Stats = {
       await setDoc(doc(db, "presence", user.uid), {
         lastSeen: serverTimestamp()
       });
-    } catch { /* sans gravité */ }
+    } catch (err) {
+      // cause la plus fréquente : les règles Firestore n'ont pas encore
+      // été republiées avec les sections `accounts` et `presence`
+      if (err.code === "permission-denied") {
+        console.warn(
+          "[Pyrolos] Présence non enregistrée : pense à republier " +
+          "firestore.rules dans la console Firebase."
+        );
+      }
+    }
   },
 
   /** Démarre le battement de cœur, uniquement quand l'onglet est visible. */
-  startHeartbeat() {
+  async startHeartbeat() {
     this.stopHeartbeat();
     if (!Auth.current) return;
 
     const battre = () => {
-      if (document.visibilityState === "visible") this.ping();
+      if (document.visibilityState === "visible") return this.ping();
     };
-    battre();
+    // on ATTEND le premier signal : sinon le comptage qui suit
+    // s'exécuterait avant que notre propre présence soit enregistrée,
+    // et afficherait 0 alors qu'on vient de se connecter
+    await battre();
     heartbeat = setInterval(battre, 120000);  // toutes les 2 minutes
   },
 
