@@ -7,7 +7,7 @@
     "depart": "Sud de Pau",
     "desc": "Une boucle courte et roulante dans les coteaux du Béarn, au sud de Pau. Pas de haut col ici : des petites routes vallonnées qui enchaînent les courbes entre vignes et villages, avec Lasseube et Lacommande en points de mire. Le format idéal pour une sortie de fin de journée, ou pour prolonger une balade par une halte gourmande.",
     "cols": [],
-    "url": "https://www.google.com/maps?saddr=43.306029,-0.403461&daddr=43.309300,-0.476100+to:43.215100,-0.547600+to:43.198300,-0.608900+to:43.164600,-0.444100+to:43.306029,-0.403461&dirflg=ht",
+    "url": "https://www.google.com/maps?saddr=Gan%2C%20Pyr%C3%A9n%C3%A9es-Atlantiques&daddr=Lasseube+to:Monein+to:Lacommande+to:Gan%2C%20Pyr%C3%A9n%C3%A9es-Atlantiques&dirflg=ht",
     "gpx": "gpx/itineraire-gourmand-lasseube-lacommande.gpx"
   },
   {
@@ -21,7 +21,7 @@
       "Col d'Aubisque",
       "Col du Soulor"
     ],
-    "url": "https://www.google.com/maps?saddr=43.2951,-0.3708&daddr=42.9772,-0.3383+to:42.9975,-0.2925+to:43.0056,-0.1006+to:43.2951,-0.3708&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Pau&daddr=Laruns+to:Col%20d%27Aubisque+to:Col%20du%20Soulor+to:Argel%C3%A8s-Gazost+to:Lourdes+to:Pau&dirflg=ht"
   },
   {
     "nom": "Le triptyque de Bigorre",
@@ -34,7 +34,7 @@
       "Col d'Aspin",
       "Col du Tourmalet"
     ],
-    "url": "https://www.google.com/maps?saddr=43.0642,0.1493&daddr=42.9397,0.3283+to:42.9106,0.1436+to:42.8730,-0.0043+to:43.0642,0.1493&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Bagn%C3%A8res-de-Bigorre&daddr=Sainte-Marie-de-Campan+to:Col%20d%27Aspin+to:Arreau+to:Col%20du%20Tourmalet+to:Luz-Saint-Sauveur+to:Argel%C3%A8s-Gazost+to:Bagn%C3%A8res-de-Bigorre&dirflg=ht"
   },
   {
     "nom": "Boucle du Luchonnais",
@@ -48,19 +48,20 @@
       "Port de Balès",
       "Col de Menté"
     ],
-    "url": "https://www.google.com/maps?saddr=42.7906,0.5934&daddr=42.7908,0.4433+to:42.7986,0.4108+to:42.7717,0.5386+to:42.9128,0.5386+to:42.9106,0.6906+to:42.8214,0.7756+to:42.7906,0.5934&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Bagn%C3%A8res-de-Luchon&daddr=Col%20de%20Peyresourde+to:Loudenvielle+to:Port%20de%20Bal%C3%A8s+to:Maul%C3%A9on-Barousse+to:Saint-B%C3%A9at+to:Col%20de%20Ment%C3%A9+to:Bagn%C3%A8res-de-Luchon&dirflg=ht"
   },
   {
-    "nom": "Port de Pailhères et gorges de l'Aude",
-    "duree": "Demi-journée",
-    "distance": "≈ 105 km",
+    "nom": "Pailhères, Donezan et plateau de Sault",
+    "duree": "Journée",
+    "distance": "≈ 140 km",
     "difficulte": "Modérée",
     "depart": "Ax-les-Thermes",
-    "desc": "Montée régulière vers Pailhères, 2001 m, avec un panorama qui s'ouvre largement sur les estives dans les derniers kilomètres. Descente côté Mijanès puis cap sur Quillan et les gorges de l'Aude au retour. Ambiance ariégeoise sauvage, nettement moins fréquentée que les cols de Bigorre. Vent souvent soutenu au sommet, prévoir une couche.",
+    "desc": "Une vraie boucle ariégeoise, sans revenir sur ses pas. Montée régulière vers le Port de Pailhères par Ascou, avec un panorama qui s'ouvre largement sur les estives. Descente côté Mijanès, traversée du Donezan puis remontée de la haute vallée de l'Aude. Retour par le plateau de Sault et le Col du Chioula, dans une ambiance de forêts et de causses très différente. Peu de trafic sur l'ensemble du parcours.",
     "cols": [
-      "Port de Pailhères"
+      "Port de Pailhères",
+      "Col du Chioula"
     ],
-    "url": "https://www.google.com/maps?saddr=42.7196,1.8375&daddr=42.6822,1.9711+to:42.7683,2.1839+to:42.7196,1.8375&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Ax-les-Thermes%2C%20Ari%C3%A8ge&daddr=Ascou%2C%20Ari%C3%A8ge+to:Port%20de%20Pailh%C3%A8res+to:Mijan%C3%A8s%2C%20Ari%C3%A8ge+to:Qu%C3%A9rigut%2C%20Ari%C3%A8ge+to:Usson-les-Bains%2C%20Ari%C3%A8ge+to:Escouloubre%2C%20Aude+to:Belcaire%2C%20Aude+to:Camurac%2C%20Aude+to:Col%20du%20Chioula+to:Ax-les-Thermes%2C%20Ari%C3%A8ge&dirflg=ht"
   },
   {
     "nom": "Cols basques et villages rouges",
@@ -72,6 +73,6 @@
     "cols": [
       "Col d'Ispéguy"
     ],
-    "url": "https://www.google.com/maps?saddr=43.1631,-1.2361&daddr=43.1900,-1.3392+to:43.3122,-1.4457+to:43.1631,-1.2361&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Saint-Jean-Pied-de-Port&daddr=Col%20d%27Isp%C3%A9guy+to:Bidarray+to:Ainhoa+to:Espelette+to:Saint-Jean-Pied-de-Port&dirflg=ht"
   }
 ]
