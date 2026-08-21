@@ -70,7 +70,32 @@ const BADGES = [
 
   { id: "mythique", icon: "🐐", nom: "Le géant",
     desc: "Rouler le Col du Tourmalet.",
-    test: (r) => r.has("Col du Tourmalet") }
+    test: (r) => r.has("Col du Tourmalet") },
+
+  // --- kilomètres, via les itinéraires marqués « faits » ---
+  { id: "km100", icon: "🛞", nom: "Première mise en jambes",
+    desc: "100 km d'itinéraires parcourus.",
+    test: (r, cols, ctx) => ctx.km >= 100 },
+
+  { id: "km250", icon: "🏍️", nom: "250 bornes au compteur",
+    desc: "250 km d'itinéraires parcourus.",
+    test: (r, cols, ctx) => ctx.km >= 250 },
+
+  { id: "km500", icon: "🔥", nom: "Grand rouleur",
+    desc: "500 km d'itinéraires parcourus.",
+    test: (r, cols, ctx) => ctx.km >= 500 },
+
+  { id: "km1000", icon: "🌟", nom: "Le millier",
+    desc: "1 000 km cumulés, itinéraires du site et parcours personnels.",
+    test: (r, cols, ctx) => ctx.km >= 1000 },
+
+  { id: "km2500", icon: "💫", nom: "Grand voyageur",
+    desc: "2 500 km cumulés au guidon.",
+    test: (r, cols, ctx) => ctx.km >= 2500 },
+
+  { id: "tousItis", icon: "🗺️", nom: "Tous les parcours",
+    desc: "Chaque itinéraire du site, roulé au moins une fois.",
+    test: (r, cols, ctx) => ctx.routes > 0 && ctx.faits === ctx.routes }
 ];
 
 let COLS = [];
@@ -115,6 +140,7 @@ async function init() {
 
   await loadRoutes();
   await loadVilles();
+  if (window.PyrolosRoutesFaites) await window.PyrolosRoutesFaites.load();
   buildStats();
   buildMassifChips();
   buildMap();
@@ -397,7 +423,14 @@ function renderBadges() {
   const ridden = getRidden();
 
   // succès débloqués en premier, pour valoriser la progression
-  const evalues = BADGES.map(b => ({ b, unlocked: b.test(ridden, COLS) }));
+  // contexte enrichi : kilomètres et itinéraires réalisés
+  const faitsSet = window.PyrolosRoutesFaites ? window.PyrolosRoutesFaites.get() : new Set();
+  const ctx = {
+    km: kmParcourus(),
+    faits: ROUTES.filter(r => faitsSet.has(r.id)).length,
+    routes: ROUTES.length
+  };
+  const evalues = BADGES.map(b => ({ b, unlocked: b.test(ridden, COLS, ctx) }));
   evalues.sort((x, y) => Number(y.unlocked) - Number(x.unlocked));
 
   badgesEl.innerHTML = evalues.map(({ b, unlocked }) => `
@@ -409,7 +442,7 @@ function renderBadges() {
 
   const done = evalues.filter(e => e.unlocked).length;
   progressTextEl.textContent =
-    `${ridden.size} / ${COLS.length} cols roulés · ${done} / ${BADGES.length} succès`;
+    `${ridden.size} / ${COLS.length} cols · ${ctx.km} km parcourus · ${done} / ${BADGES.length} succès`;
   progressFillEl.style.width = `${COLS.length ? (ridden.size / COLS.length) * 100 : 0}%`;
 }
 
@@ -437,8 +470,45 @@ async function loadRoutes() {
   renderRoutes();
 }
 
+/** Gabarit d'une carte d'itinéraire, avec note et suivi « fait ». */
+function routeCard(r) {
+  const fait = window.PyrolosRoutesFaites
+             ? window.PyrolosRoutesFaites.get().has(r.id) : false;
+  return `
+    <div class="pmw-route-wrap ${r.dev ? "is-dev" : ""} ${fait ? "is-done" : ""}" data-route="${r.id}">
+      <a class="pmw-route" href="${r.url}" target="_blank" rel="noopener noreferrer">
+        <div class="pmw-route-head">
+          <h3>${escapeHtml(r.nom)}</h3>
+          <span class="pmw-route-diff diff-${(r.difficulte || "").toLowerCase()}">${r.difficulte || ""}</span>
+        </div>
+        <div class="pmw-route-meta">
+          ${r.distance ? `<span>📏 ${escapeHtml(r.distance)}</span>` : ""}
+          ${r.duree ? `<span>🕒 ${escapeHtml(r.duree)}</span>` : ""}
+          ${r.depart ? `<span>📍 ${escapeHtml(r.depart)}</span>` : ""}
+        </div>
+        <p class="pmw-route-desc">${escapeHtml(r.desc || "")}</p>
+        ${(r.cols || []).length
+          ? `<div class="pmw-route-cols">${r.cols.map(c => `<span>${escapeHtml(c)}</span>`).join("")}</div>`
+          : ""}
+        <span class="pmw-route-cta">Ouvrir dans Google Maps →</span>
+        ${r.gpx ? `<span class="pmw-route-gpx" data-gpx="${r.gpx}">⬇ GPX</span>` : ""}
+      </a>
+
+      <div class="pmw-route-foot">
+        <div class="pmw-route-rating" data-rt="${r.id}">
+          <span class="pmw-rt-load">…</span>
+        </div>
+        <button class="pmw-route-done ${fait ? "on" : ""}" data-done="${r.id}">
+          ${fait ? "✅ Parcours fait" : "☐ Marquer comme fait"}
+        </button>
+      </div>
+    </div>`;
+}
+
 function renderRoutes() {
   const host = document.getElementById("pmw-routes");
+  const devHost = document.getElementById("pmw-dev-routes");
+  const devHead = document.getElementById("pmw-dev-head");
   if (!host) return;
 
   if (!ROUTES.length) {
@@ -446,36 +516,82 @@ function renderRoutes() {
     return;
   }
 
-  host.innerHTML = ROUTES.map(r => `
-    <a class="pmw-route" href="${r.url}" target="_blank" rel="noopener noreferrer">
-      <div class="pmw-route-head">
-        <h3>${r.nom}</h3>
-        <span class="pmw-route-diff diff-${(r.difficulte || "").toLowerCase()}">${r.difficulte || ""}</span>
-      </div>
-      <div class="pmw-route-meta">
-        ${r.distance ? `<span>📏 ${r.distance}</span>` : ""}
-        ${r.duree ? `<span>🕒 ${r.duree}</span>` : ""}
-        ${r.depart ? `<span>📍 ${r.depart}</span>` : ""}
-      </div>
-      <p class="pmw-route-desc">${r.desc || ""}</p>
-      ${(r.cols || []).length
-        ? `<div class="pmw-route-cols">${r.cols.map(c => `<span>${c}</span>`).join("")}</div>`
-        : ""}
-      <span class="pmw-route-cta">Ouvrir dans Google Maps →</span>
-      ${r.gpx ? `<span class="pmw-route-gpx" data-gpx="${r.gpx}">⬇ GPX</span>` : ""}
-    </a>
-  `).join("");
+  const dev = ROUTES.filter(r => r.dev);
+  const autres = ROUTES.filter(r => !r.dev);
 
-  // le badge GPX déclenche le téléchargement sans suivre le lien de la carte
-  host.querySelectorAll("[data-gpx]").forEach(el =>
+  devHead.hidden = dev.length === 0;
+  devHost.hidden = dev.length === 0;
+  devHost.innerHTML = dev.map(routeCard).join("");
+  host.innerHTML = autres.map(routeCard).join("");
+
+  // téléchargement GPX sans suivre le lien de la carte
+  document.querySelectorAll("[data-gpx]").forEach(el =>
     el.addEventListener("click", e => {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
       const a = document.createElement("a");
-      a.href = el.dataset.gpx;
-      a.download = "";
-      a.click();
+      a.href = el.dataset.gpx; a.download = ""; a.click();
     }));
+
+  // case « parcours fait » : alimente les succès kilométriques
+  document.querySelectorAll("[data-done]").forEach(b =>
+    b.addEventListener("click", async e => {
+      e.preventDefault();
+      b.disabled = true;
+      await window.PyrolosRoutesFaites.toggle(b.dataset.done);
+      renderRoutes();
+      renderBadges();
+    }));
+
+  // notes, chargées ensuite pour ne pas retarder l'affichage
+  ROUTES.forEach(r => montrerNoteItineraire(r.id));
+}
+
+/** Bloc d'étoiles d'un itinéraire. */
+async function montrerNoteItineraire(id) {
+  const host = document.querySelector(`[data-rt="${id}"]`);
+  if (!host || !window.PyrolosRouteRatings) return;
+
+  const d = await window.PyrolosRouteRatings.get(id);
+  const connecte = window.PyrolosRouteRatings.isSignedIn();
+  const votes = d.count === 0 ? "aucun vote"
+              : d.count === 1 ? "1 vote" : `${d.count} votes`;
+
+  host.innerHTML = `
+    <span class="pmw-rt-avg">${d.avg ? d.avg.toFixed(1) : "–"}<em>/5</em></span>
+    <span class="pmw-rt-stars">
+      ${[1,2,3,4,5].map(n =>
+        `<button class="pmw-star ${d.mine >= n ? "on" : ""}" data-rtstar="${n}"
+                 ${connecte ? "" : "disabled"} aria-label="Noter ${n} sur 5">★</button>`).join("")}
+    </span>
+    <span class="pmw-rt-count">${votes}</span>`;
+
+  host.querySelectorAll("[data-rtstar]").forEach(b =>
+    b.addEventListener("click", async e => {
+      e.preventDefault();
+      await window.PyrolosRouteRatings.set(id, +b.dataset.rtstar);
+      montrerNoteItineraire(id);
+    }));
+}
+
+/** Kilomètres cumulés des itinéraires marqués « faits ». */
+window.pyrolosRefreshRoutes = function () {
+  if (typeof renderRoutes === "function") renderRoutes();
+  if (typeof renderBadges === "function") renderBadges();
+};
+
+function kmParcourus() {
+  // itinéraires du site cochés « faits »
+  let km = 0;
+  if (window.PyrolosRoutesFaites) {
+    const faits = window.PyrolosRoutesFaites.get();
+    km += ROUTES.filter(r => faits.has(r.id))
+                .reduce((s, r) => s + (r.km || 0), 0);
+  }
+  // itinéraires composés par l'utilisateur, dont la distance est mesurée
+  // par OSRM et stockée en mètres
+  km += MY_TRIPS.filter(t => t.fait)
+                .reduce((s, t) => s + Math.round((t.distance || 0) / 1000), 0);
+  return km;
 }
 
 /* ---------- Créateur de parcours ----------
@@ -1271,6 +1387,7 @@ async function renderMyTrips() {
   }
 
   const trips = await window.PyrolosTrips.list();
+  MY_TRIPS = trips;                 // mémorisé pour le cumul kilométrique
   head.hidden = false;
   host.hidden = false;
 
@@ -1280,7 +1397,7 @@ async function renderMyTrips() {
   }
 
   host.innerHTML = trips.map(t => `
-    <div class="pmw-route pmw-route-mine">
+    <div class="pmw-route pmw-route-mine ${t.fait ? "is-done" : ""}">
       <div class="pmw-route-head">
         <h3>${escapeHtml(t.nom)}</h3>
         <span class="pmw-route-diff">${t.mode || ""}</span>
@@ -1294,11 +1411,23 @@ async function renderMyTrips() {
       ${(t.cols || []).length
         ? `<div class="pmw-route-cols">${t.cols.map(c => `<span>${escapeHtml(c)}</span>`).join("")}</div>` : ""}
       <div class="pmw-route-mine-actions">
+        <button class="pmw-route-done ${t.fait ? "on" : ""}" data-trip-done="${t.id}">
+          ${t.fait ? "✅ Parcours fait" : "☐ Marquer comme fait"}
+        </button>
         <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" data-load="${t.id}">↺ Recharger</button>
         <button class="pmw-link" data-del-trip="${t.id}">Supprimer</button>
       </div>
     </div>
   `).join("");
+
+  host.querySelectorAll("[data-trip-done]").forEach(b =>
+    b.addEventListener("click", async () => {
+      const t = trips.find(x => x.id === b.dataset.tripDone);
+      b.disabled = true;
+      await window.PyrolosTrips.toggleDone(t.id, !t.fait);
+      await renderMyTrips();
+      renderBadges();
+    }));
 
   host.querySelectorAll("[data-load]").forEach(b =>
     b.addEventListener("click", () => loadTrip(trips.find(t => t.id === b.dataset.load))));
@@ -1701,6 +1830,7 @@ window.pyrolosColIds = function () {
    MESSAGERIE
    ========================================================================= */
 
+let MY_TRIPS = [];      // itinéraires personnels, pour le cumul des km
 let CONVS = [];
 let activeConv = null;
 let unsubConvs = null, unsubMsgs = null;

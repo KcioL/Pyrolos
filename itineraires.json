@@ -8,7 +8,10 @@
     "desc": "Une boucle courte et roulante dans les coteaux du Béarn, au sud de Pau. Pas de haut col ici : des petites routes vallonnées qui enchaînent les courbes entre vignes et villages, avec Lasseube et Lacommande en points de mire. Le format idéal pour une sortie de fin de journée, ou pour prolonger une balade par une halte gourmande.",
     "cols": [],
     "url": "https://www.google.com/maps?saddr=Gan%2C%20Pyr%C3%A9n%C3%A9es-Atlantiques&daddr=Lasseube+to:Monein+to:Lacommande+to:Gan%2C%20Pyr%C3%A9n%C3%A9es-Atlantiques&dirflg=ht",
-    "gpx": "gpx/itineraire-gourmand-lasseube-lacommande.gpx"
+    "gpx": "gpx/itineraire-gourmand-lasseube-lacommande.gpx",
+    "id": "itineraire-gourmand-par-lasseube-et-laco",
+    "km": 72,
+    "dev": true
   },
   {
     "nom": "Aubisque & Soulor par la vallée d'Ossau",
@@ -21,7 +24,10 @@
       "Col d'Aubisque",
       "Col du Soulor"
     ],
-    "url": "https://www.google.com/maps?saddr=Pau&daddr=Laruns+to:Col%20d%27Aubisque+to:Col%20du%20Soulor+to:Argel%C3%A8s-Gazost+to:Lourdes+to:Pau&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Pau&daddr=Laruns+to:Col%20d%27Aubisque+to:Col%20du%20Soulor+to:Argel%C3%A8s-Gazost+to:Lourdes+to:Pau&dirflg=ht",
+    "id": "aubisque-soulor-par-la-vallee-d-ossau",
+    "km": 160,
+    "dev": false
   },
   {
     "nom": "Le triptyque de Bigorre",
@@ -34,7 +40,10 @@
       "Col d'Aspin",
       "Col du Tourmalet"
     ],
-    "url": "https://www.google.com/maps?saddr=Bagn%C3%A8res-de-Bigorre&daddr=Sainte-Marie-de-Campan+to:Col%20d%27Aspin+to:Arreau+to:Col%20du%20Tourmalet+to:Luz-Saint-Sauveur+to:Argel%C3%A8s-Gazost+to:Bagn%C3%A8res-de-Bigorre&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Bagn%C3%A8res-de-Bigorre&daddr=Sainte-Marie-de-Campan+to:Col%20d%27Aspin+to:Arreau+to:Col%20du%20Tourmalet+to:Luz-Saint-Sauveur+to:Argel%C3%A8s-Gazost+to:Bagn%C3%A8res-de-Bigorre&dirflg=ht",
+    "id": "le-triptyque-de-bigorre",
+    "km": 125,
+    "dev": false
   },
   {
     "nom": "Boucle du Luchonnais",
@@ -48,7 +57,10 @@
       "Port de Balès",
       "Col de Menté"
     ],
-    "url": "https://www.google.com/maps?saddr=Bagn%C3%A8res-de-Luchon&daddr=Col%20de%20Peyresourde+to:Loudenvielle+to:Port%20de%20Bal%C3%A8s+to:Maul%C3%A9on-Barousse+to:Saint-B%C3%A9at+to:Col%20de%20Ment%C3%A9+to:Bagn%C3%A8res-de-Luchon&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Bagn%C3%A8res-de-Luchon&daddr=Col%20de%20Peyresourde+to:Loudenvielle+to:Port%20de%20Bal%C3%A8s+to:Maul%C3%A9on-Barousse+to:Saint-B%C3%A9at+to:Col%20de%20Ment%C3%A9+to:Bagn%C3%A8res-de-Luchon&dirflg=ht",
+    "id": "boucle-du-luchonnais",
+    "km": 110,
+    "dev": false
   },
   {
     "nom": "Pailhères, Donezan et plateau de Sault",
@@ -61,7 +73,10 @@
       "Port de Pailhères",
       "Col du Chioula"
     ],
-    "url": "https://www.google.com/maps?saddr=Ax-les-Thermes%2C%20Ari%C3%A8ge&daddr=Ascou%2C%20Ari%C3%A8ge+to:Port%20de%20Pailh%C3%A8res+to:Mijan%C3%A8s%2C%20Ari%C3%A8ge+to:Qu%C3%A9rigut%2C%20Ari%C3%A8ge+to:Usson-les-Bains%2C%20Ari%C3%A8ge+to:Escouloubre%2C%20Aude+to:Belcaire%2C%20Aude+to:Camurac%2C%20Aude+to:Col%20du%20Chioula+to:Ax-les-Thermes%2C%20Ari%C3%A8ge&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Ax-les-Thermes%2C%20Ari%C3%A8ge&daddr=Ascou%2C%20Ari%C3%A8ge+to:Port%20de%20Pailh%C3%A8res+to:Mijan%C3%A8s%2C%20Ari%C3%A8ge+to:Qu%C3%A9rigut%2C%20Ari%C3%A8ge+to:Usson-les-Bains%2C%20Ari%C3%A8ge+to:Escouloubre%2C%20Aude+to:Belcaire%2C%20Aude+to:Camurac%2C%20Aude+to:Col%20du%20Chioula+to:Ax-les-Thermes%2C%20Ari%C3%A8ge&dirflg=ht",
+    "id": "pailheres-donezan-et-plateau-de-sault",
+    "km": 140,
+    "dev": false
   },
   {
     "nom": "Cols basques et villages rouges",
@@ -73,6 +88,9 @@
     "cols": [
       "Col d'Ispéguy"
     ],
-    "url": "https://www.google.com/maps?saddr=Saint-Jean-Pied-de-Port&daddr=Col%20d%27Isp%C3%A9guy+to:Bidarray+to:Ainhoa+to:Espelette+to:Saint-Jean-Pied-de-Port&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=Saint-Jean-Pied-de-Port&daddr=Col%20d%27Isp%C3%A9guy+to:Bidarray+to:Ainhoa+to:Espelette+to:Saint-Jean-Pied-de-Port&dirflg=ht",
+    "id": "cols-basques-et-villages-rouges",
+    "km": 85,
+    "dev": false
   }
 ]

@@ -3,7 +3,7 @@
 //  Fait le lien entre pyrolos-firebase.js et le DOM.
 // =============================================================
 
-import { Auth, Ratings, Ridden, Trips, Riders, Messages, Stats, Account, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
+import { Auth, Ratings, Ridden, Trips, Riders, Messages, Stats, Account, RouteRatings, RoutesFaites, colId, authErrorMessage, validatePseudo, displayNameOf } from "./pyrolos-firebase.js";
 
 const $ = id => document.getElementById(id);
 
@@ -14,7 +14,7 @@ const $ = id => document.getElementById(id);
    toucher si tu veux un ton plus doux ou plus salé.
    ============================================================= */
 const LOST_PASSWORD = {
-  titre: "T'es un énorme troller !!",
+  titre: "T'es un énorme clown !!",
   texte: "Je t'avais dit d'enregistrer ton mot de passe quelque part. " +
          "Maintenant ton compte est perdu. Tocard.<br><br>" +
          "Plus qu'à recréer un compte avec un autre pseudo… et à le noter, cette fois."
@@ -46,6 +46,10 @@ Auth.onChange(async user => {
   // recharger les cols roulés depuis le compte (ou le stockage local)
   Ridden.reset();
   await Ridden.load();
+  RoutesFaites.reset();
+  await RoutesFaites.load();
+  RouteRatings.clearCache();
+  if (window.pyrolosRefreshRoutes) window.pyrolosRefreshRoutes();
 
   const scope = $("pmw-ridden-scope");
   if (scope) {
@@ -439,6 +443,13 @@ export async function mountRating(host, col) {
 window.PyrolosRating = { mount: mountRating, openLogin: () => openModal("login") };
 window.PyrolosRidden = Ridden;
 window.PyrolosColId = colId;
+window.PyrolosRouteRatings = {
+  isSignedIn: () => !!Auth.current,
+  get: id => RouteRatings.get(id),
+  set: (id, v) => RouteRatings.set(id, v),
+  remove: id => RouteRatings.remove(id)
+};
+window.PyrolosRoutesFaites = RoutesFaites;
 window.PyrolosMessages = {
   isSignedIn: () => !!Auth.current,
   myUid: () => Messages.myUid(),
@@ -461,7 +472,8 @@ window.PyrolosTrips = {
   isSignedIn: () => !!Auth.current,
   list:   () => Trips.list(),
   save:   d  => Trips.save(d),
-  remove: id => Trips.remove(id)
+  remove: id => Trips.remove(id),
+  toggleDone: (id, v) => Trips.toggleDone(id, v)
 };
 
 // premier chargement (utilisateur non connecté : stockage local)

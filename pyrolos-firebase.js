@@ -345,6 +345,125 @@ export const Ridden = {
 
 
 /* ============================================================
+   ITINÉRAIRES DU SITE : notes et parcours réalisés
+
+   routes/{routeId}/ratings/{uid}  -> note de 1 à 5, un doc par personne
+   users/{uid}.routesFaites        -> liste des itinéraires cochés « fait »
+
+   Même principe que pour les cols : la moyenne n'est jamais stockée,
+   elle se recalcule à partir des notes individuelles. Rien à falsifier.
+   ============================================================ */
+
+const routeCache = new Map();
+
+export const RouteRatings = {
+  async get(id, { force = false } = {}) {
+    if (!force && routeCache.has(id)) return routeCache.get(id);
+    try {
+      const snap = await getDocs(collection(db, "routes", id, "ratings"));
+      let sum = 0, count = 0, mine = null;
+      const uid = Auth.current?.uid;
+      snap.forEach(doc_ => {
+        const v = doc_.data().value;
+        if (typeof v !== "number") return;
+        sum += v; count++;
+        if (uid && doc_.id === uid) mine = v;
+      });
+      const res = { avg: count ? sum / count : null, count, mine };
+      routeCache.set(id, res);
+      return res;
+    } catch (err) {
+      console.warn("Notes d'itinéraire :", err.code || err);
+      return { avg: null, count: 0, mine: null };
+    }
+  },
+
+  async set(id, value) {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+    if (!Number.isInteger(value) || value < 1 || value > 5) throw new Error("invalid-value");
+    await setDoc(doc(db, "routes", id, "ratings", user.uid), {
+      value, updatedAt: serverTimestamp()
+    });
+    routeCache.delete(id);
+    return this.get(id, { force: true });
+  },
+
+  async remove(id) {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+    await deleteDoc(doc(db, "routes", id, "ratings", user.uid));
+    routeCache.delete(id);
+    return this.get(id, { force: true });
+  },
+
+  clearCache() { routeCache.clear(); }
+};
+
+/* ---- Itinéraires réalisés (compteur de kilomètres) ---- */
+
+const ROUTES_KEY = "pyrolos_routes_faites";
+let routesCache = null;
+
+function localRoutes() {
+  try {
+    const raw = localStorage.getItem(ROUTES_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch { return new Set(); }
+}
+
+export const RoutesFaites = {
+  async load() {
+    const user = Auth.current;
+    if (!user) { routesCache = localRoutes(); return routesCache; }
+    try {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const remote = new Set(snap.exists() ? (snap.data().routesFaites || []) : []);
+      // reprise de ce qui avait été coché hors compte
+      const local = localRoutes();
+      if (local.size) {
+        local.forEach(x => remote.add(x));
+        await setDoc(doc(db, "users", user.uid),
+                     { routesFaites: [...remote], updatedAt: serverTimestamp() },
+                     { merge: true });
+        try { localStorage.removeItem(ROUTES_KEY); } catch {}
+      }
+      routesCache = remote;
+      return routesCache;
+    } catch (err) {
+      console.warn("Itinéraires réalisés :", err.code || err);
+      routesCache = localRoutes();
+      return routesCache;
+    }
+  },
+
+  get() { return routesCache || localRoutes(); },
+
+  async toggle(id) {
+    const set = new Set(this.get());
+    if (set.has(id)) set.delete(id); else set.add(id);
+    routesCache = set;
+
+    const user = Auth.current;
+    if (!user) {
+      try { localStorage.setItem(ROUTES_KEY, JSON.stringify([...set])); } catch {}
+      return set;
+    }
+    try {
+      await setDoc(doc(db, "users", user.uid),
+                   { routesFaites: [...set], updatedAt: serverTimestamp() },
+                   { merge: true });
+    } catch (err) {
+      console.warn("Sauvegarde des itinéraires réalisés :", err.code || err);
+    }
+    return set;
+  },
+
+  reset() { routesCache = null; }
+};
+
+
+/* ============================================================
    ITINÉRAIRES PERSONNELS
    Modèle : users/{uid}/trips/{tripId}
 
@@ -404,6 +523,18 @@ export const Trips = {
     const user = Auth.current;
     if (!user) throw new Error("not-signed-in");
     await deleteDoc(doc(db, "users", user.uid, "trips", id));
+  },
+
+  /**
+   * Marque (ou démarque) un itinéraire personnel comme parcouru.
+   * Le drapeau vit dans le document lui-même : il est déjà privé,
+   * inutile de tenir une liste séparée.
+   */
+  async toggleDone(id, valeur) {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+    await setDoc(doc(db, "users", user.uid, "trips", id),
+                 { fait: !!valeur }, { merge: true });
   }
 };
 
