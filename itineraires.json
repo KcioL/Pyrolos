@@ -39,16 +39,16 @@
   {
     "nom": "Boucle du Luchonnais",
     "duree": "Demi-journée",
-    "distance": "≈ 95 km",
+    "distance": "≈ 110 km",
     "difficulte": "Technique",
     "depart": "Bagnères-de-Luchon",
-    "desc": "Peyresourde pour se mettre en jambes, large et roulant, puis on bascule dans le confidentiel : Port de Balès sur une chaussée étroite au milieu des estives, et Col de Menté dont le versant sud enchaîne les lacets serrés. Peu de trafic, beaucoup de plaisir, mais l'attention est de mise — vaches en liberté sur Balès et revêtement irrégulier par endroits.",
+    "desc": "Un vrai circuit, sans revenir sur ses pas. Peyresourde pour se mettre en jambes, descente sur Loudenvielle, puis Port de Balès et sa chaussée étroite au milieu des estives. On bascule ensuite au nord vers la Barousse, on rejoint Saint-Béat, et le Col de Menté referme la boucle par son versant sud très lacé. Peu de trafic, beaucoup de plaisir — attention aux vaches en liberté sur Balès.",
     "cols": [
       "Col de Peyresourde",
       "Port de Balès",
       "Col de Menté"
     ],
-    "url": "https://www.google.com/maps?saddr=42.7906,0.5934&daddr=42.7908,0.4433+to:42.7717,0.5386+to:42.8214,0.7756+to:42.7906,0.5934&dirflg=ht"
+    "url": "https://www.google.com/maps?saddr=42.7906,0.5934&daddr=42.7908,0.4433+to:42.7986,0.4108+to:42.7717,0.5386+to:42.9128,0.5386+to:42.9106,0.6906+to:42.8214,0.7756+to:42.7906,0.5934&dirflg=ht"
   },
   {
     "nom": "Port de Pailhères et gorges de l'Aude",
