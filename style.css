@@ -1056,3 +1056,53 @@ body{
   .pmw-meteo-grid{ padding:16px 20px 8px; }
   .pmw-meteo-note{ padding:10px 20px 28px; }
 }
+
+/* ---------- MÉTÉO HEURE PAR HEURE ---------- */
+.pmw-meteo-card.clickable{ cursor:pointer; transition:.15s; }
+.pmw-meteo-card.clickable:hover{ transform:translateY(-2px); border-color:var(--sage); }
+.pmw-meteo-card.clickable:focus-visible{ outline:2px solid var(--sage); outline-offset:2px; }
+
+.pmw-hour-box{ width:min(94vw, 520px); }
+.pmw-hour-head, .pmw-hour-row{
+  display:grid;
+  grid-template-columns:38px 26px 1fr 34px 34px 34px 62px;
+  align-items:center; gap:6px;
+}
+.pmw-hour-head{
+  font-size:9.5px; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--text-muted); padding:0 4px 7px;
+  border-bottom:1px solid var(--line); margin-bottom:4px;
+}
+.pmw-hour-head .bar{ padding-left:2px; }
+.pmw-hour-head .tt,.pmw-hour-head .ww,.pmw-hour-head .pp{ text-align:right; }
+
+.pmw-hour-list{ max-height:52vh; overflow-y:auto; padding-right:3px; }
+.pmw-hour-list::-webkit-scrollbar{ width:7px; }
+.pmw-hour-list::-webkit-scrollbar-thumb{ background:var(--line); border-radius:7px; }
+
+.pmw-hour-row{ padding:5px 4px; border-radius:6px; font-size:12px; }
+.pmw-hour-row.nuit{ background:rgba(10,14,18,.45); }
+.pmw-hour-row.now{ background:rgba(131,163,116,.16); }
+.pmw-hour-row .hh{ font-size:11px; color:var(--text-muted); font-weight:600; }
+.pmw-hour-row.now .hh{ color:var(--sage); text-transform:uppercase; font-size:9.5px; }
+.pmw-hour-row .ic{ font-size:14px; text-align:center; }
+.pmw-hour-row .bar{ height:7px; background:var(--night-800); border-radius:4px; overflow:hidden; }
+.pmw-hour-row .bar i{
+  display:block; height:100%; border-radius:4px;
+  background:linear-gradient(90deg, var(--slate-blue), var(--terracotta));
+}
+.pmw-hour-row .tt{ text-align:right; font-weight:600; color:var(--text-primary); }
+.pmw-hour-row .ww{ text-align:right; font-size:10.5px; color:var(--text-muted); }
+.pmw-hour-row .pp{ text-align:right; font-size:10.5px; color:var(--slate-blue); }
+.pmw-hour-row .al em{
+  font-style:normal; font-size:9px; font-weight:700; text-transform:uppercase;
+  padding:2px 6px; border-radius:9px; white-space:nowrap;
+}
+.pmw-hour-row .al em.warn{ background:rgba(201,138,60,.22); color:var(--warn); }
+.pmw-hour-row .al em.danger{ background:rgba(201,86,74,.25); color:#e0857a; }
+.pmw-hour-note{ font-size:10.5px; color:var(--text-muted); line-height:1.5; margin:12px 0 0; }
+
+@media(max-width:520px){
+  .pmw-hour-head, .pmw-hour-row{ grid-template-columns:34px 22px 1fr 30px 28px 28px 0; }
+  .pmw-hour-row .al{ display:none; }
+}

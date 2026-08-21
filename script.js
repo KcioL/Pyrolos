@@ -127,6 +127,7 @@ async function init() {
   initRiders();
   initMessages();
   initMeteo();
+  initHourly();
 }
 
 /* ---------- Stats & filtres (vue Carte) ---------- */
@@ -1815,7 +1816,10 @@ function afficherMeteo(resultats) {
     }).join("");
 
     return `
-      <div class="pmw-meteo-card ${alerte ? "has-" + alerte.niv : ""}">
+      <div class="pmw-meteo-card clickable ${alerte ? "has-" + alerte.niv : ""}"
+           data-hour="${escapeHtml(p.nom)}" data-lat="${p.lat}" data-lon="${p.lon}"
+           data-alt="${p.alt}" role="button" tabindex="0"
+           title="Voir le détail heure par heure">
         <div class="pmw-meteo-head">
           <div>
             <h3>${escapeHtml(p.nom)}</h3>
@@ -1840,9 +1844,119 @@ function afficherMeteo(resultats) {
       </div>`;
   }).join("");
 
+  grid.querySelectorAll("[data-hour]").forEach(el => {
+    const ouvrir = () => openHourly(el.dataset.hour, +el.dataset.lat, +el.dataset.lon, el.dataset.alt);
+    el.addEventListener("click", ouvrir);
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ouvrir(); }
+    });
+  });
+
   const maj = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   note.textContent = `Relevé de ${maj} · données Open-Meteo · `
     + `la météo d'un col peut changer très vite, vérifie avant de partir.`;
+}
+
+/* ---------- Météo heure par heure ---------- */
+
+const hourCache = new Map();     // clé "lat,lon" -> données horaires
+
+async function openHourly(nom, lat, lon, alt) {
+  const modal = document.getElementById("pmw-hour-modal");
+  const body = document.getElementById("pmw-hour-body");
+  document.getElementById("pmw-hour-title").textContent = nom;
+  document.getElementById("pmw-hour-sub").textContent =
+    `${alt} m · prévision des 24 prochaines heures`;
+  body.innerHTML = `<div class="pmw-empty">Chargement…</div>`;
+  modal.hidden = false;
+
+  const cle = `${lat},${lon}`;
+  try {
+    let data = hourCache.get(cle);
+    if (!data) {
+      // requête ciblée sur ce seul point : bien plus léger que de charger
+      // l'horaire de tous les lieux dès l'ouverture de l'onglet
+      const url = "https://api.open-meteo.com/v1/forecast"
+        + `?latitude=${lat}&longitude=${lon}`
+        + "&hourly=temperature_2m,weather_code,precipitation,wind_speed_10m,apparent_temperature"
+        + "&forecast_days=2&timezone=Europe%2FParis";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Open-Meteo " + res.status);
+      data = await res.json();
+      hourCache.set(cle, data);
+    }
+    afficherHoraire(data);
+  } catch (err) {
+    console.error(err);
+    body.innerHTML = `<div class="pmw-empty">Prévision horaire indisponible pour le moment.</div>`;
+  }
+}
+
+function afficherHoraire(data) {
+  const body = document.getElementById("pmw-hour-body");
+  const h = data.hourly;
+  if (!h || !h.time) {
+    body.innerHTML = `<div class="pmw-empty">Aucune donnée horaire.</div>`;
+    return;
+  }
+
+  // on démarre à l'heure courante, et on affiche 24 heures
+  const maintenant = Date.now();
+  let debut = h.time.findIndex(t => new Date(t).getTime() >= maintenant - 3600000);
+  if (debut < 0) debut = 0;
+  const fin = Math.min(debut + 24, h.time.length);
+
+  const temps = h.temperature_2m.slice(debut, fin);
+  const tmin = Math.min(...temps), tmax = Math.max(...temps);
+  const ecart = Math.max(1, tmax - tmin);
+
+  let lignes = "";
+  for (let i = debut; i < fin; i++) {
+    const dt = new Date(h.time[i]);
+    const heure = dt.getHours();
+    const t = h.temperature_2m[i];
+    const code = h.weather_code[i];
+    const pluie = h.precipitation[i];
+    const vent = Math.round(h.wind_speed_10m[i]);
+    const nuit = heure < 7 || heure > 20;
+
+    // barre proportionnelle à la température, pour lire la courbe d'un coup d'œil
+    const largeur = 12 + ((t - tmin) / ecart) * 76;
+    const alerte = alerteMoto(code, vent, t);
+
+    lignes += `
+      <div class="pmw-hour-row ${nuit ? "nuit" : ""} ${i === debut ? "now" : ""}">
+        <span class="hh">${i === debut ? "now" : String(heure).padStart(2, "0") + "h"}</span>
+        <span class="ic">${WEATHER_ICONS[code] || "🌡️"}</span>
+        <span class="bar"><i style="width:${largeur}%"></i></span>
+        <span class="tt">${Math.round(t)}°</span>
+        <span class="ww">${vent}</span>
+        <span class="pp">${pluie > 0.05 ? pluie.toFixed(1) : "–"}</span>
+        <span class="al">${alerte ? `<em class="${alerte.niv}">${alerte.txt}</em>` : ""}</span>
+      </div>`;
+  }
+
+  body.innerHTML = `
+    <div class="pmw-hour-head">
+      <span class="hh"></span><span class="ic"></span><span class="bar">Température</span>
+      <span class="tt">°C</span><span class="ww">km/h</span><span class="pp">mm</span><span class="al"></span>
+    </div>
+    <div class="pmw-hour-list">${lignes}</div>
+    <p class="pmw-hour-note">
+      Les valeurs en altitude sont modélisées : en montagne, l'écart avec la
+      réalité au sommet peut être notable.
+    </p>`;
+}
+
+function initHourly() {
+  const modal = document.getElementById("pmw-hour-modal");
+  if (!modal) return;
+  modal.addEventListener("click", e => {
+    if (e.target.hasAttribute("data-hour-close")) modal.hidden = true;
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && !modal.hidden) modal.hidden = true;
+  });
 }
 
 /* ---------- Onglets ---------- */
