@@ -777,6 +777,14 @@ function renderBuilder() {
     b.addEventListener("click", () => { trip.via.splice(+b.dataset.rmvia, 1); trip.route = null; renderBuilder(); }));
 
   // --- libellés départ / arrivée ---
+  const arrLabel = document.getElementById("pmw-arrivee-label");
+  if (arrLabel) {
+    arrLabel.textContent =
+      trip.mode === "boucle" ? "retour au point de départ"
+      : trip.mode === "aller-retour" ? "même route en sens inverse"
+      : "point à définir";
+  }
+
   document.getElementById("pmw-start-label").textContent = trip.start ? trip.start.label : "Non défini";
   document.getElementById("pmw-start-label").classList.toggle("set", !!trip.start);
   document.getElementById("pmw-end-label").textContent = trip.end ? trip.end.label : "Non défini";
@@ -800,7 +808,10 @@ function renderBuilder() {
       autoPan: true
     }).addTo(builderMap);
 
-    m.bindTooltip(`${txt === "D" ? "Départ" : txt === "A" ? "Arrivée" : "Passage"} — glisser pour déplacer`,
+    const libelle = txt === "D" ? "Départ"
+                  : txt === "D/A" ? "Départ et arrivée"
+                  : txt === "A" ? "Arrivée" : "Passage";
+    m.bindTooltip(`${libelle} — glisser pour déplacer`,
                   { direction: "top", offset: [0, -12] });
 
     m.on("dragend", e => {
@@ -818,7 +829,13 @@ function renderBuilder() {
   if (endMarker)   { builderMap.removeLayer(endMarker);   endMarker = null; }
   viaMarkers.forEach(m => builderMap.removeLayer(m)); viaMarkers = [];
 
-  if (trip.start) startMarker = poser(trip.start, "d", "D", trip.start);
+  // En boucle et en aller-retour, l'arrivée EST le départ : le marqueur
+  // porte alors « D/A » pour que la carte le dise clairement, plutôt que
+  // de laisser croire qu'aucune arrivée n'est définie.
+  const boucle = trip.mode === "boucle" || trip.mode === "aller-retour";
+  if (trip.start) {
+    startMarker = poser(trip.start, boucle ? "da" : "d", boucle ? "D/A" : "D", trip.start);
+  }
   if (trip.end && trip.mode === "point") endMarker = poser(trip.end, "a", "A", trip.end);
   trip.via.forEach(p => viaMarkers.push(poser(p, "p", "P", p)));
 
