@@ -128,6 +128,16 @@
 
       <div class="pmw-builder-panel">
 
+        <!-- recherche de lieu : permet de composer un parcours partout -->
+        <div class="pmw-bl">
+          <span class="pmw-bl-label">🌍 Aller à un lieu <span class="pmw-optional-tag">monde entier</span></span>
+          <div class="pmw-geo-row">
+            <input type="text" id="pmw-geo" placeholder="Ex. Queenstown, Nouvelle-Zélande">
+            <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" id="pmw-geo-go">Chercher</button>
+          </div>
+          <div class="pmw-geo-results" id="pmw-geo-results" hidden></div>
+        </div>
+
         <!-- cols -->
         <div class="pmw-bl">
           <span class="pmw-bl-label">Cols à franchir</span>
@@ -185,6 +195,15 @@
             <input type="text" id="pmw-save-desc" maxlength="200" placeholder="Description (facultatif)">
             <button class="pmw-btn pmw-btn-primary pmw-btn-sm" id="pmw-save-trip">💾 Enregistrer</button>
             <p class="pmw-save-hint" id="pmw-save-hint"></p>
+          </div>
+
+          <div class="pmw-route-meteo" id="pmw-route-meteo">
+            <div class="pmw-rm-head">
+              <label for="pmw-rm-depart">Départ prévu</label>
+              <input type="datetime-local" id="pmw-rm-depart">
+              <button class="pmw-btn pmw-btn-ghost pmw-btn-sm" id="pmw-rm-go">🌦️ Météo du parcours</button>
+            </div>
+            <div id="pmw-rm-body"></div>
           </div>
 
           <div class="pmw-result-actions">

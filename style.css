@@ -1106,3 +1106,76 @@ body{
   .pmw-hour-head, .pmw-hour-row{ grid-template-columns:34px 22px 1fr 30px 28px 28px 0; }
   .pmw-hour-row .al{ display:none; }
 }
+
+/* ---------- RECHERCHE DE LIEU (monde entier) ---------- */
+.pmw-geo-row{ display:flex; gap:8px; }
+.pmw-geo-row input{ flex:1; min-width:0; }
+.pmw-geo-row .pmw-btn{ flex-shrink:0; }
+.pmw-geo-results{
+  margin-top:7px; background:var(--night-950);
+  border:1px solid var(--line); border-radius:8px; overflow:hidden;
+  max-height:190px; overflow-y:auto;
+}
+.pmw-geo-item{
+  display:block; width:100%; text-align:left; cursor:pointer;
+  background:transparent; border:0; border-bottom:1px solid var(--line);
+  padding:9px 12px; font-family:'Work Sans',sans-serif;
+  font-size:11.5px; line-height:1.4; color:var(--text-muted); transition:.13s;
+}
+.pmw-geo-item:last-child{ border-bottom:0; }
+.pmw-geo-item:hover{ background:var(--night-800); color:var(--text-primary); }
+.pmw-geo-msg{ padding:11px 12px; font-size:11.5px; color:var(--text-muted); }
+
+/* ---------- MÉTÉO DU PARCOURS ---------- */
+.pmw-route-meteo{
+  background:var(--night-950); border:1px solid var(--line);
+  border-radius:10px; padding:14px; margin-bottom:14px;
+}
+.pmw-rm-head{ display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
+.pmw-rm-head label{
+  font-size:10.5px; font-weight:600; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--text-muted);
+}
+#pmw-rm-depart{
+  flex:1; min-width:150px; padding:7px 10px; border-radius:7px; font-size:12px;
+  background:var(--night-900); border:1px solid var(--line);
+  color:var(--text-primary); font-family:'Work Sans',sans-serif;
+  color-scheme:dark;
+}
+#pmw-rm-depart:focus{ outline:none; border-color:var(--sage); }
+
+.pmw-rm-msg{ font-size:11.5px; color:var(--text-muted); padding:10px 2px 2px; }
+.pmw-rm-verdict{
+  margin:12px 0 9px; padding:8px 11px; border-radius:7px;
+  font-size:11.5px; font-weight:600;
+}
+.pmw-rm-verdict.ok{ background:rgba(131,163,116,.15); color:var(--sage); }
+.pmw-rm-verdict.ko{ background:rgba(201,138,60,.16); color:var(--warn); }
+
+.pmw-rm-list{ display:flex; flex-direction:column; gap:3px; }
+.pmw-rm-row{
+  display:grid; grid-template-columns:52px 42px 22px 32px 56px 52px 1fr;
+  align-items:center; gap:5px;
+  padding:5px 7px; border-radius:6px; font-size:11.5px;
+  background:var(--night-900);
+}
+.pmw-rm-row.a-warn{ background:rgba(201,138,60,.12); }
+.pmw-rm-row.a-danger{ background:rgba(201,86,74,.14); }
+.pmw-rm-row .k{ font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase; }
+.pmw-rm-row .h{ font-weight:600; color:var(--text-primary); }
+.pmw-rm-row .i{ font-size:13px; text-align:center; }
+.pmw-rm-row .t{ font-weight:600; color:var(--terracotta); text-align:right; }
+.pmw-rm-row .w,.pmw-rm-row .p{ font-size:10px; color:var(--text-muted); text-align:right; }
+.pmw-rm-row .a{ text-align:right; }
+.pmw-rm-row .a em{
+  font-style:normal; font-size:9px; font-weight:700; text-transform:uppercase;
+  padding:2px 6px; border-radius:9px; white-space:nowrap;
+}
+.pmw-rm-row .a em.warn{ background:rgba(201,138,60,.25); color:var(--warn); }
+.pmw-rm-row .a em.danger{ background:rgba(201,86,74,.28); color:#e0857a; }
+.pmw-rm-note{ font-size:10px; line-height:1.5; color:var(--text-muted); margin:10px 0 0; }
+
+@media(max-width:520px){
+  .pmw-rm-row{ grid-template-columns:46px 38px 20px 28px 46px 44px 0; }
+  .pmw-rm-row .a{ display:none; }
+}

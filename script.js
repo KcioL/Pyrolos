@@ -128,6 +128,7 @@ async function init() {
   initMessages();
   initMeteo();
   initHourly();
+  initRouteMeteo();
 }
 
 /* ---------- Stats & filtres (vue Carte) ---------- */
@@ -559,6 +560,15 @@ function initBuilder() {
     }));
 
   document.getElementById("pmw-trace").addEventListener("click", traceRoute);
+
+  // recherche de lieu : permet de composer un parcours n'importe où,
+  // pas seulement dans les Pyrénées
+  const geoInput = document.getElementById("pmw-geo");
+  const geoGo = document.getElementById("pmw-geo-go");
+  geoGo.addEventListener("click", () => chercherLieu(geoInput.value));
+  geoInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); chercherLieu(geoInput.value); }
+  });
   document.getElementById("pmw-save-trip").addEventListener("click", saveTrip);
   document.getElementById("pmw-fuel-toggle").addEventListener("click", toggleFuel);
   document.getElementById("pmw-gpx").addEventListener("click", downloadGPX);
@@ -808,6 +818,184 @@ function renderBuilder() {
   // --- bouton ---
   const ready = waypoints().length >= 2;
   document.getElementById("pmw-trace").disabled = !ready;
+}
+
+/* ---------- Météo le long du parcours ----------
+   On échantillonne le tracé, on estime l'heure de passage à chaque point
+   à partir de la durée calculée par OSRM, puis on récupère la prévision
+   HORAIRE correspondante. Fonctionne partout dans le monde : les fuseaux
+   sont gérés via l'offset renvoyé par Open-Meteo pour chaque point.      */
+
+function initRouteMeteo() {
+  const btn = document.getElementById("pmw-rm-go");
+  if (!btn) return;
+  btn.addEventListener("click", meteoParcours);
+
+  // heure de départ par défaut : maintenant, arrondi au quart d'heure
+  const input = document.getElementById("pmw-rm-depart");
+  const d = new Date();
+  d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+  input.value = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+                  .toISOString().slice(0, 16);
+}
+
+/** Points répartis régulièrement le long du tracé, avec leur avancement. */
+function echantillonner(coords, n) {
+  if (coords.length <= n) {
+    return coords.map((c, i) => ({ lat: c[0], lon: c[1], frac: i / (coords.length - 1 || 1) }));
+  }
+  const pas = (coords.length - 1) / (n - 1);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const idx = Math.round(i * pas);
+    out.push({ lat: coords[idx][0], lon: coords[idx][1], frac: i / (n - 1) });
+  }
+  return out;
+}
+
+async function meteoParcours() {
+  const body = document.getElementById("pmw-rm-body");
+  const btn = document.getElementById("pmw-rm-go");
+  if (!trip.route) return;
+
+  const depInput = document.getElementById("pmw-rm-depart").value;
+  const depart = depInput ? new Date(depInput) : new Date();
+  if (isNaN(depart.getTime())) {
+    body.innerHTML = `<div class="pmw-rm-msg">Heure de départ invalide.</div>`;
+    return;
+  }
+
+  btn.disabled = true;
+  body.innerHTML = `<div class="pmw-rm-msg">Analyse du parcours…</div>`;
+
+  try {
+    const pts = echantillonner(trip.route.coords, 6);
+    const lats = pts.map(p => p.lat.toFixed(4)).join(",");
+    const lons = pts.map(p => p.lon.toFixed(4)).join(",");
+
+    const url = "https://api.open-meteo.com/v1/forecast"
+      + `?latitude=${lats}&longitude=${lons}`
+      + "&hourly=temperature_2m,weather_code,precipitation,wind_speed_10m"
+      + "&forecast_days=3&timezone=auto";
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Open-Meteo " + res.status);
+    const brut = await res.json();
+    const liste = Array.isArray(brut) ? brut : [brut];
+
+    const dureeMs = trip.route.duration * 1000;
+    let alertes = 0;
+
+    const lignes = pts.map((p, i) => {
+      const m = liste[i];
+      if (!m || !m.hourly) return "";
+
+      // heure de passage estimée à ce point du parcours
+      const eta = new Date(depart.getTime() + p.frac * dureeMs);
+
+      // les horaires renvoyés sont en heure LOCALE du point : on ramène
+      // l'ETA dans ce même repère avant de comparer
+      // Open-Meteo renvoie les horaires en heure locale du point ; on
+      // décale donc l'ETA du même offset avant de comparer. Cela rend le
+      // calcul correct que le parcours soit dans les Pyrénées ou aux
+      // antipodes, quel que soit le fuseau de celui qui consulte.
+      const offset = (m.utc_offset_seconds || 0) * 1000;
+      const cible = eta.getTime() + offset;
+
+      let idx = 0, meilleur = Infinity;
+      m.hourly.time.forEach((t, j) => {
+        const tms = Date.parse(t + "Z");        // chaîne locale lue comme UTC
+        const ecart = Math.abs(tms - cible);
+        if (ecart < meilleur) { meilleur = ecart; idx = j; }
+      });
+
+      const t = Math.round(m.hourly.temperature_2m[idx]);
+      const code = m.hourly.weather_code[idx];
+      const vent = Math.round(m.hourly.wind_speed_10m[idx]);
+      const pluie = m.hourly.precipitation[idx];
+      const al = alerteMoto(code, vent, t);
+      if (al) alertes++;
+
+      const heureLocale = m.hourly.time[idx].slice(11, 16);
+      const km = Math.round((trip.route.distance / 1000) * p.frac);
+      const etiquette = i === 0 ? "Départ"
+                      : i === pts.length - 1 ? "Arrivée"
+                      : `km ${km}`;
+
+      return `
+        <div class="pmw-rm-row ${al ? "a-" + al.niv : ""}">
+          <span class="k">${etiquette}</span>
+          <span class="h">${heureLocale}</span>
+          <span class="i">${WEATHER_ICONS[code] || "🌡️"}</span>
+          <span class="t">${t}°</span>
+          <span class="w">${vent} km/h</span>
+          <span class="p">${pluie > 0.05 ? pluie.toFixed(1) + " mm" : "–"}</span>
+          <span class="a">${al ? `<em class="${al.niv}">${al.txt}</em>` : ""}</span>
+        </div>`;
+    }).join("");
+
+    const verdict = alertes === 0
+      ? `<div class="pmw-rm-verdict ok">✓ Conditions favorables sur l'ensemble du parcours</div>`
+      : `<div class="pmw-rm-verdict ko">⚠️ ${alertes} point${alertes > 1 ? "s" : ""} de vigilance sur le parcours</div>`;
+
+    body.innerHTML = verdict + `<div class="pmw-rm-list">${lignes}</div>`
+      + `<p class="pmw-rm-note">Heures locales de chaque point, estimées d'après
+         la durée de route (sans les pauses). Prévision à 3 jours maximum.</p>`;
+  } catch (err) {
+    console.error(err);
+    body.innerHTML = `<div class="pmw-rm-msg">Météo du parcours indisponible pour le moment.</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ---------- Recherche de lieu (monde entier) ----------
+   Géocodage par Nominatim (OpenStreetMap), sans clé d'API.
+   Sert à déplacer la carte hors des Pyrénées : le calcul d'itinéraire
+   OSRM et l'export Google Maps fonctionnent partout dans le monde.   */
+
+async function chercherLieu(texte) {
+  const q = (texte || "").trim();
+  const box = document.getElementById("pmw-geo-results");
+  const btn = document.getElementById("pmw-geo-go");
+  if (!q) return;
+
+  btn.disabled = true;
+  btn.textContent = "…";
+  box.hidden = false;
+  box.innerHTML = `<div class="pmw-geo-msg">Recherche…</div>`;
+
+  try {
+    const url = "https://nominatim.openstreetmap.org/search"
+      + `?format=json&limit=5&q=${encodeURIComponent(q)}`;
+    const res = await fetch(url, { headers: { "Accept-Language": "fr" } });
+    if (!res.ok) throw new Error(res.status);
+    const lieux = await res.json();
+
+    if (!lieux.length) {
+      box.innerHTML = `<div class="pmw-geo-msg">Aucun lieu trouvé.</div>`;
+      return;
+    }
+
+    box.innerHTML = lieux.map((l, i) => `
+      <button class="pmw-geo-item" data-geo="${i}"
+              data-lat="${l.lat}" data-lon="${l.lon}">
+        ${escapeHtml(l.display_name)}
+      </button>`).join("");
+
+    box.querySelectorAll("[data-geo]").forEach(b =>
+      b.addEventListener("click", () => {
+        builderMap.setView([+b.dataset.lat, +b.dataset.lon], 11);
+        box.hidden = true;
+        document.getElementById("pmw-geo").value = "";
+      }));
+  } catch (err) {
+    console.error(err);
+    box.innerHTML = `<div class="pmw-geo-msg">Recherche indisponible pour le moment.</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Chercher";
+  }
 }
 
 /* ---------- Stations-service ----------
@@ -1169,6 +1357,8 @@ function initRiders() {
     selForm.appendChild(new Option(m, m));
   });
   selForm.appendChild(new Option("Toutes les Pyrénées", "Toutes les Pyrénées"));
+  selForm.appendChild(new Option("Ailleurs dans le monde", "Ailleurs dans le monde"));
+  selFilter.appendChild(new Option("Ailleurs dans le monde", "Ailleurs dans le monde"));
 
   selFilter.addEventListener("change", e => { filterMassif = e.target.value; renderRiders(); });
   document.getElementById("pmw-filter-style")
