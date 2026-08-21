@@ -395,6 +395,7 @@ export async function mountRating(host, col) {
   const stars = [1,2,3,4,5].map(n => `
     <button class="pmw-star ${data.mine >= n ? 'on' : ''}"
             data-star="${n}" aria-label="Noter ${n} sur 5"
+            title="${data.mine === n ? 'Cliquer pour retirer ta note' : 'Noter ' + n + '/5'}"
             ${Auth.current ? '' : 'disabled'}>★</button>`).join("");
 
   host.innerHTML = `
@@ -417,8 +418,15 @@ export async function mountRating(host, col) {
       const value = Number(btn.dataset.star);
       host.querySelector(".pmw-rating-msg").textContent = "Enregistrement…";
       try {
-        await Ratings.set(id, value);
+        // recliquer sur l'étoile déjà sélectionnée retire la note :
+        // c'est le réflexe naturel après un clic malencontreux
+        if (data.mine === value) {
+          await Ratings.remove(id);
+        } else {
+          await Ratings.set(id, value);
+        }
         await mountRating(host, col);
+        if (window.pyrolosRefreshRanking) window.pyrolosRefreshRanking();
       } catch (err) {
         console.error(err);
         host.querySelector(".pmw-rating-msg").textContent =
@@ -433,6 +441,7 @@ export async function mountRating(host, col) {
   if (removeBtn) removeBtn.addEventListener("click", async () => {
     await Ratings.remove(id);
     await mountRating(host, col);
+    if (window.pyrolosRefreshRanking) window.pyrolosRefreshRanking();
   });
 
   const needLogin = host.querySelector("[data-need-login]");
@@ -443,6 +452,12 @@ export async function mountRating(host, col) {
 window.PyrolosRating = { mount: mountRating, openLogin: () => openModal("login") };
 window.PyrolosRidden = Ridden;
 window.PyrolosColId = colId;
+window.PyrolosColRatings = {
+  isSignedIn: () => !!Auth.current,
+  get: id => Ratings.get(id),
+  set: (id, v) => Ratings.set(id, v),
+  remove: id => Ratings.remove(id)
+};
 window.PyrolosRouteRatings = {
   isSignedIn: () => !!Auth.current,
   get: id => RouteRatings.get(id),

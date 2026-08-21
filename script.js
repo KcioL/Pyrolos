@@ -149,6 +149,7 @@ async function init() {
   renderBadges();
   initTabs();
   initSort();
+  initRouteSort();
   initBuilder();
   initRiders();
   initMessages();
@@ -385,24 +386,55 @@ window.pyrolosRefreshRidden = function () {
 
 /* ---------- Classement (vue Classement) ---------- */
 
-function renderRanking() {
+let colNotes = {};      // id de col -> { avg, count }
+
+/** Classement des cols, alimenté par les VRAIES notes des utilisateurs. */
+async function renderRanking() {
   if (!rankingEl) return;
+  rankingEl.innerHTML = `<div class="pmw-empty">Chargement des notes…</div>`;
+
+  // une lecture par col, mise en cache par le module
+  if (window.PyrolosColRatings && window.PyrolosColId) {
+    await Promise.all(COLS.map(async c => {
+      const id = window.PyrolosColId(c);
+      colNotes[c.nom] = await window.PyrolosColRatings.get(id);
+    }));
+  }
+
+  const noteDe = c => {
+    const n = colNotes[c.nom];
+    return n && n.avg !== null && n.avg !== undefined ? n.avg : null;
+  };
+
   const sorted = [...COLS].sort((a, b) => {
-    if (currentSort === "note") return (b.note || 0) - (a.note || 0);
     if (currentSort === "alt") return b.alt - a.alt;
     if (currentSort === "nom") return a.nom.localeCompare(b.nom);
-    return 0;
+    // par note : les cols sans vote sont renvoyés en fin de liste
+    const na = noteDe(a), nb = noteDe(b);
+    if (na === null) return nb === null ? 0 : 1;
+    if (nb === null) return -1;
+    return nb - na;
   });
 
-  rankingEl.innerHTML = sorted.map((c, idx) => `
-    <div class="pmw-rank-row">
-      <div class="pmw-rank-num">${idx + 1}</div>
-      <div class="pmw-rank-name"><b>${c.nom}</b><span>${c.massif}</span></div>
-      <div class="pmw-rank-note">★ ${c.note ? c.note.toFixed(1) : "–"}<span>/5</span></div>
-      <div class="pmw-rank-alt">${c.alt} m</div>
-    </div>
-  `).join("");
+  rankingEl.innerHTML = sorted.map((c, idx) => {
+    const n = colNotes[c.nom] || { avg: null, count: 0 };
+    const note = n.avg !== null && n.avg !== undefined
+      ? `<div class="pmw-rank-note">★ ${n.avg.toFixed(1)}<span>/5</span></div>
+         <div class="pmw-rank-votes">${n.count} vote${n.count > 1 ? "s" : ""}</div>`
+      : `<div class="pmw-rank-nonote">pas encore noté</div>`;
+
+    return `
+      <div class="pmw-rank-row">
+        <div class="pmw-rank-num">${idx + 1}</div>
+        <div class="pmw-rank-name"><b>${escapeHtml(c.nom)}</b><span>${escapeHtml(c.massif)}</span></div>
+        ${note}
+        <div class="pmw-rank-alt">${c.alt} m</div>
+      </div>`;
+  }).join("");
 }
+
+// appelé après chaque vote depuis une fiche de col
+window.pyrolosRefreshRanking = renderRanking;
 
 function initSort() {
   if (!sortEl) return;
@@ -414,6 +446,69 @@ function initSort() {
       renderRanking();
     });
   });
+}
+
+/* ---------- Classement des itinéraires ----------
+   Alimenté uniquement par les notes réelles enregistrées dans Firestore.
+   Un parcours sans vote affiche « pas encore noté » plutôt qu'une valeur
+   par défaut : mieux vaut une case vide qu'un chiffre trompeur.        */
+
+let routeSort = "note";
+let routeNotes = {};      // id -> { avg, count }
+
+async function renderRouteRanking() {
+  const host = document.getElementById("pmw-ranking-routes");
+  if (!host || !ROUTES.length) return;
+
+  host.innerHTML = `<div class="pmw-empty">Chargement des notes…</div>`;
+
+  // une lecture par itinéraire, mise en cache par le module
+  if (window.PyrolosRouteRatings) {
+    await Promise.all(ROUTES.map(async r => {
+      routeNotes[r.id] = await window.PyrolosRouteRatings.get(r.id);
+    }));
+  }
+
+  const tri = [...ROUTES].sort((a, b) => {
+    if (routeSort === "km") return (b.km || 0) - (a.km || 0);
+    if (routeSort === "nom") return a.nom.localeCompare(b.nom);
+    // par note : les parcours non notés vont en fin de liste
+    const na = routeNotes[a.id]?.avg, nb = routeNotes[b.id]?.avg;
+    if (na === null || na === undefined) return (nb === null || nb === undefined) ? 0 : 1;
+    if (nb === null || nb === undefined) return -1;
+    return nb - na;
+  });
+
+  host.innerHTML = tri.map((r, i) => {
+    const n = routeNotes[r.id] || { avg: null, count: 0 };
+    const noteAff = n.avg !== null && n.avg !== undefined
+      ? `<div class="pmw-rank-note">★ ${n.avg.toFixed(1)}<span>/5</span></div>
+         <div class="pmw-rank-votes">${n.count} vote${n.count > 1 ? "s" : ""}</div>`
+      : `<div class="pmw-rank-nonote">pas encore noté</div>`;
+
+    return `
+      <div class="pmw-rank-row ${r.dev ? "is-dev" : ""}">
+        <div class="pmw-rank-num">${i + 1}</div>
+        <div class="pmw-rank-name">
+          <b>${r.dev ? "⭐ " : ""}${escapeHtml(r.nom)}</b>
+          <span>${escapeHtml(r.depart || "")}${r.difficulte ? " · " + escapeHtml(r.difficulte) : ""}</span>
+        </div>
+        ${noteAff}
+        <div class="pmw-rank-alt">${r.km ? r.km + " km" : "–"}</div>
+      </div>`;
+  }).join("");
+}
+
+function initRouteSort() {
+  const bar = document.getElementById("pmw-sort-routes");
+  if (!bar) return;
+  bar.querySelectorAll("[data-rsort]").forEach(b =>
+    b.addEventListener("click", () => {
+      bar.querySelectorAll(".pmw-chip").forEach(c => c.classList.remove("active"));
+      b.classList.add("active");
+      routeSort = b.dataset.rsort;
+      renderRouteRanking();
+    }));
 }
 
 /* ---------- Succès (vue Succès) ---------- */
@@ -561,16 +656,36 @@ async function montrerNoteItineraire(id) {
     <span class="pmw-rt-stars">
       ${[1,2,3,4,5].map(n =>
         `<button class="pmw-star ${d.mine >= n ? "on" : ""}" data-rtstar="${n}"
-                 ${connecte ? "" : "disabled"} aria-label="Noter ${n} sur 5">★</button>`).join("")}
+                 ${connecte ? "" : "disabled"}
+                 title="${d.mine === n ? "Cliquer pour retirer ta note" : "Noter " + n + "/5"}"
+                 aria-label="Noter ${n} sur 5">★</button>`).join("")}
     </span>
-    <span class="pmw-rt-count">${votes}</span>`;
+    <span class="pmw-rt-count">${votes}</span>
+    ${d.mine ? `<button class="pmw-rt-clear" data-rtclear="${id}"
+                        title="Retirer ma note">✕ ma note (${d.mine}/5)</button>` : ""}`;
 
   host.querySelectorAll("[data-rtstar]").forEach(b =>
     b.addEventListener("click", async e => {
       e.preventDefault();
-      await window.PyrolosRouteRatings.set(id, +b.dataset.rtstar);
+      const valeur = +b.dataset.rtstar;
+      // recliquer sur l'étoile déjà choisie retire la note : c'est le
+      // geste naturel quand on s'est trompé
+      if (d.mine === valeur) {
+        await window.PyrolosRouteRatings.remove(id);
+      } else {
+        await window.PyrolosRouteRatings.set(id, valeur);
+      }
       montrerNoteItineraire(id);
+      renderRouteRanking();
     }));
+
+  const clr = host.querySelector("[data-rtclear]");
+  if (clr) clr.addEventListener("click", async e => {
+    e.preventDefault();
+    await window.PyrolosRouteRatings.remove(id);
+    montrerNoteItineraire(id);
+    renderRouteRanking();
+  });
 }
 
 /** Kilomètres cumulés des itinéraires marqués « faits ». */
@@ -2381,6 +2496,7 @@ function initTabs() {
         setTimeout(() => map.invalidateSize(), 50);
       }
       if (tab.dataset.view === "meteo") renderMeteo();
+      if (tab.dataset.view === "classement") renderRouteRanking();
       if (tab.dataset.view === "itineraires" && builderMap) {
         setTimeout(() => builderMap.invalidateSize(), 50);
       }

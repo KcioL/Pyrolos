@@ -1286,3 +1286,26 @@ body{
 /* itinéraire personnel marqué comme parcouru */
 .pmw-route-mine.is-done{ border-left-color:var(--sage); border-left-width:4px; }
 .pmw-route-mine-actions .pmw-route-done{ margin-left:0; }
+
+/* ---------- CLASSEMENT DES ITINÉRAIRES ---------- */
+.pmw-rank-row.is-dev{ border-left:3px solid var(--terracotta); }
+.pmw-rank-votes{
+  font-size:9.5px; color:var(--text-muted); text-align:right;
+  margin-top:1px; flex-shrink:0;
+}
+.pmw-rank-nonote{
+  font-size:11px; font-style:italic; color:var(--text-muted);
+  flex-shrink:0; white-space:nowrap;
+}
+/* la note et son nombre de votes forment une colonne */
+.pmw-ranking .pmw-rank-note{ flex-direction:column; align-items:flex-end; gap:0; }
+
+/* retrait de sa note sur un itinéraire */
+.pmw-rt-clear{
+  cursor:pointer; white-space:nowrap;
+  font-family:'Work Sans',sans-serif; font-size:10px; font-weight:600;
+  padding:4px 9px; border-radius:12px;
+  background:transparent; border:1px solid var(--line); color:var(--text-muted);
+  transition:.14s;
+}
+.pmw-rt-clear:hover{ border-color:#b3574a; color:#e0a08a; background:rgba(179,87,74,.1); }

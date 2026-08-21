@@ -10,7 +10,6 @@
     "revetement": "Bon revêtement, refait par sections ces dernières années.",
     "desc": "Le col le plus mythique des Pyrénées, versant Barèges très roulant, versant Luz-Saint-Sauveur plus exposé au vent.",
     "conseil": "Beaucoup de cyclistes en été, prudence dans les épingles serrées le matin.",
-    "note": 4.8,
     "ouverture": "Généralement fermé de novembre à mai (neige)."
   },
   {
@@ -24,7 +23,6 @@
     "revetement": "Bon état général, corniche étroite par endroits.",
     "desc": "Route en balcon spectaculaire au-dessus du Cirque du Litor, liaison directe avec le Col du Soulor.",
     "conseil": "Chutes de pierres possibles côté corniche, rouler prudemment sans visibilité dégagée.",
-    "note": 4.6,
     "ouverture": "Généralement fermé de novembre à avril."
   },
   {
@@ -38,7 +36,6 @@
     "revetement": "Bon revêtement, route large.",
     "desc": "Un classique très roulant entre Luchon et les vallées voisines, régulièrement emprunté par le Tour de France.",
     "conseil": "Bon col pour débuter en montagne, virages plutôt ouverts.",
-    "note": 4.2,
     "ouverture": "Ouvert la majeure partie de l'année, vigilance en hiver."
   },
   {
@@ -52,7 +49,6 @@
     "revetement": "Chaussée plus étroite, quelques nids-de-poule signalés.",
     "desc": "Route plus sauvage et confidentielle, moins fréquentée que ses voisins, ambiance pastorale.",
     "conseil": "Vaches en liberté fréquentes sur la chaussée, ralentir dans les zones d'estive.",
-    "note": 4.0,
     "ouverture": "Généralement fermé de novembre à avril."
   },
   {
@@ -66,7 +62,6 @@
     "revetement": "Revêtement irrégulier par endroits, ombragé et parfois humide.",
     "desc": "Col court mais intense, tristement connu pour l'accident de Fabio Casartelli en 1995.",
     "conseil": "Route ombragée, adhérence réduite après la pluie même l'été.",
-    "note": 3.8,
     "ouverture": "Ouvert toute l'année, prudence en hiver."
   },
   {
@@ -80,7 +75,6 @@
     "revetement": "Bon revêtement récent sur la majorité du parcours.",
     "desc": "Grand col ariégeois assez sauvage, panorama dégagé sur les estives dès les derniers kilomètres.",
     "conseil": "Vent fort possible au sommet, prévoir une couche supplémentaire.",
-    "note": 4.3,
     "ouverture": "Généralement fermé de novembre à mai."
   },
   {
@@ -94,7 +88,6 @@
     "revetement": "Très bon revêtement, route principale entretenue toute l'année.",
     "desc": "Le plus haut col routier des Pyrénées, porte d'entrée vers l'Andorre, circulation plus dense.",
     "conseil": "Trafic touristique et poids lourds vers l'Andorre, doubler avec prudence.",
-    "note": 4.1,
     "ouverture": "Ouvert toute l'année (axe principal déneigé)."
   },
   {
@@ -108,7 +101,6 @@
     "revetement": "Bon état, route agréable et fluide.",
     "desc": "Passage entre vallée d'Aure et vallée de Campan, souvent couplé au Tourmalet dans une même boucle.",
     "conseil": "Troupeaux de vaches au sommet en été, klaxonner doucement pour dégager la route.",
-    "note": 4.4,
     "ouverture": "Ouvert la majeure partie de l'année, vigilance en hiver."
   },
   {
@@ -122,7 +114,6 @@
     "revetement": "Route étroite côté sud, quelques passages dégradés.",
     "desc": "Célèbre pour la chute de Luis Ocaña dans la descente en 1971, versant sud engagé et technique.",
     "conseil": "Descente technique, adapter franchement l'allure au premier passage.",
-    "note": 3.9,
     "ouverture": "Ouvert toute l'année, prudence en hiver."
   },
   {
@@ -136,7 +127,6 @@
     "revetement": "Bon revêtement, route large et dégagée.",
     "desc": "Souvent parcouru en liaison avec l'Aubisque, panorama ouvert sur la vallée d'Ossau.",
     "conseil": "Bonne visibilité générale, idéal pour profiter du paysage sans excès de vigilance.",
-    "note": 4.3,
     "ouverture": "Généralement fermé de décembre à mars."
   },
   {
@@ -150,7 +140,6 @@
     "revetement": "Chaussée parfois moussue en sous-bois, prudence à l'ombre.",
     "desc": "Col discret au cœur du Couserans, ambiance forestière et peu de trafic.",
     "conseil": "Feuilles mortes et humidité en sous-bois, adhérence variable selon la saison.",
-    "note": 3.7,
     "ouverture": "Ouvert toute l'année, prudence en sous-bois."
   },
   {
@@ -164,7 +153,6 @@
     "revetement": "Bon revêtement, route plus étroite côté espagnol.",
     "desc": "Petit col basque qui franchit la frontière, ambiance très différente des grands cols pyrénéens.",
     "conseil": "Douane et circulation locale plus dense en saison touristique.",
-    "note": 3.6,
     "ouverture": "Ouvert toute l'année."
   }
 ]
