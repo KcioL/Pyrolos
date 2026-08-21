@@ -14,7 +14,7 @@ const $ = id => document.getElementById(id);
    toucher si tu veux un ton plus doux ou plus salé.
    ============================================================= */
 const LOST_PASSWORD = {
-  titre: "T'es un énorme Débile !!",
+  titre: "T'es un énorme débile !!",
   texte: "Je t'avais dit d'enregistrer ton mot de passe quelque part. " +
          "Maintenant ton compte est perdu. Tocard.<br><br>" +
          "Plus qu'à recréer un compte avec un autre pseudo… et à le noter, cette fois."
