@@ -329,7 +329,13 @@ export function authErrorMessage(err) {
     "auth/invalid-credential":     "Identifiant ou mot de passe incorrect.",
     "auth/wrong-password":         "Identifiant ou mot de passe incorrect.",
     "auth/user-not-found":         "Identifiant ou mot de passe incorrect.",
-    "auth/too-many-requests":      "Trop de tentatives. Réessaie dans quelques minutes.",
+    // Firebase bloque temporairement après plusieurs échecs, avec un délai
+    // qui s'allonge à chaque nouvelle série. Ni le seuil ni la durée ne
+    // sont paramétrables : c'est une protection intégrée, côté Google.
+    "auth/too-many-requests":
+      "Trop de tentatives échouées. L'accès à ce compte est temporairement "
+      + "bloqué par sécurité. Réessaie dans quelques minutes, ou réinitialise "
+      + "ton mot de passe via « Mot de passe oublié ».",
     "auth/network-request-failed": "Problème de connexion réseau.",
     "auth/operation-not-allowed":  "La méthode E-mail/Mot de passe n'est pas activée dans la console Firebase."
   };
