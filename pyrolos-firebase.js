@@ -140,8 +140,30 @@ export const Auth = {
 
     // Réservation atomique du pseudo : la création échoue si le document
     // existe déjà, même en cas d'inscriptions simultanées.
+    //
+    // Une réservation peut être ORPHELINE : compte supprimé avant que sa
+    // libération n'existe, ou inscription interrompue en cours de route.
+    // On vérifie donc si le compte associé est toujours là ; si son
+    // document `accounts/{uid}` a disparu, le pseudo est reprenable.
+    const refPseudo = doc(db, "pseudos", p);
+    const existant = await getDoc(refPseudo).catch(() => null);
+
+    if (existant && existant.exists()) {
+      const proprio = existant.data().uid;
+      let orpheline = !proprio;                      // réservation jamais aboutie
+      if (proprio) {
+        const compte = await getDoc(doc(db, "accounts", proprio)).catch(() => null);
+        orpheline = !compte || !compte.exists();     // compte supprimé depuis
+      }
+      if (!orpheline) {
+        const e = new Error("Ce pseudo est déjà pris.");
+        e.code = "pyrolos/pseudo-taken"; throw e;
+      }
+      try { await deleteDoc(refPseudo); } catch {}   // on récupère l'abandon
+    }
+
     try {
-      await setDoc(doc(db, "pseudos", p), { reserve: true }, { merge: false });
+      await setDoc(refPseudo, { reserve: true }, { merge: false });
     } catch {
       const e = new Error("Ce pseudo est déjà pris.");
       e.code = "pyrolos/pseudo-taken"; throw e;
@@ -152,7 +174,7 @@ export const Auth = {
       cred = await createUserWithEmailAndPassword(
         auth, avecMail ? mail : pseudoToEmail(pseudo), password);
     } catch (err) {
-      try { await deleteDoc(doc(db, "pseudos", p)); } catch {}
+      try { await deleteDoc(refPseudo); } catch {}
       throw err;
     }
 
@@ -1112,11 +1134,18 @@ export const Account = {
           .catch(() => {})));
     });
 
-    // 7. présence et inscription
+    // 7. libérer la réservation du pseudo — sans quoi le nom resterait
+    //    bloqué à jamais, et personne ne pourrait le reprendre
+    await essayer("pseudo", async () => {
+      const p = normalizePseudo(displayNameOf(user));
+      if (p) await deleteDoc(doc(db, "pseudos", p));
+    });
+
+    // 8. présence et inscription
     await essayer("présence", () => deleteDoc(doc(db, "presence", uid)));
     await essayer("inscription", () => deleteDoc(doc(db, "accounts", uid)));
 
-    // 8. le compte lui-même, en dernier
+    // 9. le compte lui-même, en dernier
     await deleteUser(user);
 
     return { restant };
