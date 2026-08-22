@@ -1335,3 +1335,12 @@ body{
   .pmw-subtabs{ padding:18px 20px 0; }
   .pmw-subtab{ flex:1; justify-content:center; padding:10px 12px; font-size:12.5px; }
 }
+
+/* étiquettes privé / public sur les champs d'inscription */
+.pmw-lbl-tag{
+  display:inline-block; margin-right:6px; padding:2px 7px; border-radius:10px;
+  font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  vertical-align:middle;
+}
+.pmw-lbl-tag.privee{ background:rgba(108,146,179,.22); color:var(--slate-blue); }
+.pmw-lbl-tag.publique{ background:rgba(131,163,116,.22); color:var(--sage); }

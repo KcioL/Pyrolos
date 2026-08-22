@@ -388,14 +388,21 @@
       <p class="pmw-modal-sub" id="pmw-modal-sub">Connecte-toi avec ton pseudo pour noter les cols.</p>
 
       <div class="pmw-field">
-        <label for="pmw-pseudo" id="pmw-pseudo-lbl">Identifiant</label>
+        <label for="pmw-pseudo" id="pmw-pseudo-lbl">
+          <span class="pmw-lbl-tag publique" id="pmw-pseudo-tag" hidden>public</span>
+          <span id="pmw-pseudo-txt">Identifiant</span>
+        </label>
         <input type="text" id="pmw-pseudo" autocomplete="username" placeholder="Ton e-mail ou ton pseudo">
-        <small class="pmw-hint" id="pmw-pseudo-hint" hidden>3 à 20 caractères : lettres, chiffres, . _ -</small>
+        <small class="pmw-hint" id="pmw-pseudo-hint" hidden>
+          Le nom que verront les autres motards. Aucun rapport avec ton adresse :
+          tu peux t'appeler « loick » avec l'adresse « gardien64@… ».
+          3 à 20 caractères.
+        </small>
       </div>
 
       <div class="pmw-field" id="pmw-email-field" hidden>
         <label for="pmw-email">
-          Adresse e-mail <span class="pmw-optional-tag">facultatif</span>
+          <span class="pmw-lbl-tag privee">privé</span> Adresse e-mail
         </label>
         <input type="email" id="pmw-email" autocomplete="email" placeholder="Laisse vide si tu préfères">
         <small class="pmw-hint">

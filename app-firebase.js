@@ -120,6 +120,10 @@ const matchEl  = $("pmw-match");
 const revealEl = $("pmw-reveal");
 const pseudoEl = $("pmw-pseudo");
 const hintEl   = $("pmw-pseudo-hint");
+const emailEl  = $("pmw-email");
+const emailField = $("pmw-email-field");
+const pseudoTxt = $("pmw-pseudo-txt");
+const pseudoTag = $("pmw-pseudo-tag");
 const submitBtn= $("pmw-submit");
 const toggleBtn= $("pmw-toggle-mode");
 const forgotBtn= $("pmw-forgot");
@@ -184,8 +188,8 @@ function applyMode() {
   const signup = mode === "signup";
   titleEl.textContent = signup ? "Créer un compte" : "Connexion";
   subEl.textContent   = signup
-    ? "Choisis un pseudo unique. Aucune adresse e-mail n'est demandée."
-    : "Connecte-toi avec ton pseudo pour noter les cols.";
+    ? "Ton pseudo sera visible de tous ; ton e-mail restera privé."
+    : "Connecte-toi pour noter les cols et échanger.";
   submitBtn.textContent = signup ? "Créer mon compte" : "Se connecter";
   toggleBtn.textContent = signup
     ? "Déjà un compte ? Se connecter"
@@ -194,6 +198,10 @@ function applyMode() {
   // l'index.html n'a pas encore été mis à jour (sinon une seule balise
   // manquante ferait planter toute l'ouverture de la fenêtre).
   if (hintEl)      hintEl.hidden      = !signup;
+  if (emailField)  emailField.hidden  = !signup;
+  if (pseudoTag)   pseudoTag.hidden   = !signup;
+  if (pseudoTxt)   pseudoTxt.textContent = signup ? "Pseudo affiché" : "Identifiant";
+  pseudoEl.placeholder = signup ? "loick" : "Ton e-mail";
   if (forgotBtn)   forgotBtn.hidden   = signup;
   if (confirmField) confirmField.hidden = !signup;
   if (revealEl)    revealEl.hidden    = !signup;
@@ -239,8 +247,8 @@ submitBtn.addEventListener("click", async () => {
     if (problem) return showError(problem);
 
     const mail = (emailEl ? emailEl.value : "").trim();
-    if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
-      return showError("Adresse e-mail invalide. Laisse le champ vide si tu n'en veux pas.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
+      return showError("Saisis une adresse e-mail valide : elle te permettra de récupérer ton mot de passe.");
     }
 
     if (pass.length < 6) {
@@ -258,7 +266,7 @@ submitBtn.addEventListener("click", async () => {
   submitBtn.textContent = "…";
   try {
     if (mode === "signup") {
-      const u = await Auth.register(pseudo, pass);
+      const u = await Auth.register(pseudo, emailEl.value, pass);
       stateEl.textContent = displayNameOf(u);
     } else {
       await Auth.login(pseudo, pass);
