@@ -120,6 +120,7 @@ const matchEl  = $("pmw-match");
 const revealEl = $("pmw-reveal");
 const pseudoEl = $("pmw-pseudo");
 const hintEl   = $("pmw-pseudo-hint");
+const loginHint = $("pmw-login-hint");
 const emailEl  = $("pmw-email");
 const emailField = $("pmw-email-field");
 const pseudoTxt = $("pmw-pseudo-txt");
@@ -198,10 +199,14 @@ function applyMode() {
   // l'index.html n'a pas encore été mis à jour (sinon une seule balise
   // manquante ferait planter toute l'ouverture de la fenêtre).
   if (hintEl)      hintEl.hidden      = !signup;
+  if (loginHint)   loginHint.hidden   = signup;
   if (emailField)  emailField.hidden  = !signup;
   if (pseudoTag)   pseudoTag.hidden   = !signup;
   if (pseudoTxt)   pseudoTxt.textContent = signup ? "Pseudo affiché" : "Identifiant";
-  pseudoEl.placeholder = signup ? "loick" : "Ton e-mail";
+  // À la connexion, le champ accepte les deux : l'e-mail pour les comptes
+  // récents, le pseudo pour ceux créés avant que l'e-mail existe. L'invite
+  // doit le dire, sinon les anciens comptes se croient bloqués.
+  pseudoEl.placeholder = signup ? "loick" : "Ton e-mail (ou ton pseudo)";
   if (forgotBtn)   forgotBtn.hidden   = signup;
   if (confirmField) confirmField.hidden = !signup;
   if (revealEl)    revealEl.hidden    = !signup;
