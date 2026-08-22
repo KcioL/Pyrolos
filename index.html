@@ -58,6 +58,7 @@
     </span>
     <span class="pmw-account-state" id="pmw-account-state">Non connecté</span>
     <button class="pmw-btn pmw-btn-ghost" id="pmw-login-btn">Se connecter</button>
+    <button class="pmw-btn pmw-btn-ghost" id="pmw-account-btn" hidden>Mon compte</button>
     <button class="pmw-btn pmw-btn-ghost" id="pmw-logout-btn" hidden>Se déconnecter</button>
     <button class="pmw-btn pmw-btn-danger" id="pmw-delete-account-btn" hidden>Supprimer mon compte</button>
   </div>
@@ -574,6 +575,50 @@
       <p class="pmw-modal-sub" id="pmw-hour-sub"></p>
       <div id="pmw-hour-body">
         <div class="pmw-empty">Chargement…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODALE MON COMPTE ============ -->
+  <div class="pmw-modal" id="pmw-acc-modal" hidden>
+    <div class="pmw-modal-backdrop" data-acc-close></div>
+    <div class="pmw-modal-box" role="dialog" aria-modal="true" aria-labelledby="pmw-acc-title">
+      <button class="pmw-modal-close" data-acc-close aria-label="Fermer">&times;</button>
+      <h2 class="pmw-modal-title" id="pmw-acc-title">Mon compte</h2>
+
+      <div class="pmw-acc-line">
+        <span class="pmw-acc-lbl">Pseudo</span>
+        <span class="pmw-acc-val" id="pmw-acc-pseudo">–</span>
+      </div>
+      <div class="pmw-acc-line">
+        <span class="pmw-acc-lbl">Adresse e-mail</span>
+        <span class="pmw-acc-val" id="pmw-acc-mail">–</span>
+      </div>
+
+      <div class="pmw-warn" id="pmw-acc-warn" hidden>
+        <strong>Aucune adresse enregistrée.</strong>
+        Ton compte a été créé avant l'ajout des e-mails : sans adresse, un mot
+        de passe oublié ne peut pas être réinitialisé. Ajoute-en une ci-dessous.
+      </div>
+
+      <h3 class="pmw-acc-sub" id="pmw-acc-formtitle">Ajouter une adresse</h3>
+
+      <div class="pmw-field">
+        <label for="pmw-acc-new">Nouvelle adresse e-mail</label>
+        <input type="email" id="pmw-acc-new" autocomplete="email" placeholder="gardien64@exemple.fr">
+      </div>
+
+      <div class="pmw-field">
+        <label for="pmw-acc-pass">Ton mot de passe actuel</label>
+        <input type="password" id="pmw-acc-pass" autocomplete="current-password" placeholder="Pour confirmer que c'est bien toi">
+      </div>
+
+      <div class="pmw-modal-error" id="pmw-acc-error" hidden></div>
+      <div class="pmw-acc-ok" id="pmw-acc-ok" hidden></div>
+
+      <div class="pmw-modal-actions">
+        <button class="pmw-btn-cancel" data-acc-close>Fermer</button>
+        <button class="pmw-btn pmw-btn-primary" id="pmw-acc-save">Enregistrer</button>
       </div>
     </div>
   </div>

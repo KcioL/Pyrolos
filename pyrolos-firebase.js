@@ -7,7 +7,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
-  deleteUser, reauthenticateWithCredential, EmailAuthProvider
+  deleteUser, reauthenticateWithCredential, EmailAuthProvider,
+  updateEmail, verifyBeforeUpdateEmail
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, deleteDoc, getDoc, addDoc, updateDoc,
@@ -219,7 +220,14 @@ export const Auth = {
       const err = new Error("legacy");
       err.code = "pyrolos/legacy-account"; throw err;
     }
-    await sendPasswordResetEmail(auth, e);
+    // `url` ramène l'utilisateur sur le site une fois le mot de passe
+    // changé, au lieu de le laisser sur une page Firebase anonyme.
+    // Le domaine doit figurer dans Authentication → Settings →
+    // Domaines autorisés, sinon Firebase refuse la demande.
+    await sendPasswordResetEmail(auth, e, {
+      url: window.location.origin + window.location.pathname,
+      handleCodeInApp: false
+    });
   },
 
   /** Ce pseudo correspond-il à un compte doté d'une vraie adresse ? */
@@ -233,6 +241,59 @@ export const Auth = {
   /** Le compte utilise-t-il encore l'ancienne adresse interne ? */
   isLegacy() {
     return !!Auth.current?.email?.endsWith("@" + PSEUDO_DOMAIN);
+  },
+
+  /** Adresse réelle du compte, ou null si c'est encore l'adresse interne. */
+  realEmail() {
+    const e = Auth.current?.email || "";
+    return e && !e.endsWith("@" + PSEUDO_DOMAIN) ? e : null;
+  },
+
+  /**
+   * Ajoute ou remplace l'adresse e-mail du compte.
+   *
+   * Firebase exige une authentification récente : on redemande donc le
+   * mot de passe actuel. Deux chemins possibles selon la configuration
+   * du projet :
+   *  - verifyBeforeUpdateEmail : un lien est envoyé à la NOUVELLE adresse,
+   *    et le changement ne prend effet qu'après confirmation. C'est la
+   *    méthode recommandée, et la seule autorisée si la protection contre
+   *    l'énumération des comptes est active.
+   *  - updateEmail : changement immédiat, sur les projets plus anciens.
+   *
+   * @returns {"verification"|"immediat"} ce qui s'est réellement passé
+   */
+  async changeEmail(motDePasseActuel, nouvelleAdresse) {
+    const user = Auth.current;
+    if (!user) throw new Error("not-signed-in");
+
+    const mail = (nouvelleAdresse || "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
+      const e = new Error("Adresse e-mail invalide.");
+      e.code = "pyrolos/bad-email"; throw e;
+    }
+    if (mail.endsWith("@" + PSEUDO_DOMAIN)) {
+      const e = new Error("Cette adresse est réservée au fonctionnement du site.");
+      e.code = "pyrolos/bad-email"; throw e;
+    }
+
+    // ré-authentification avec l'identifiant courant (réel ou interne)
+    const cred = EmailAuthProvider.credential(user.email, motDePasseActuel);
+    await reauthenticateWithCredential(user, cred);
+
+    try {
+      await verifyBeforeUpdateEmail(user, mail);
+      return "verification";
+    } catch (err) {
+      // certains projets refusent cette méthode : on retombe sur l'autre
+      if (err.code === "auth/operation-not-allowed" ||
+          err.code === "auth/unsupported-persistence-type") {
+        await updateEmail(user, mail);
+        await user.reload();
+        return "immediat";
+      }
+      throw err;
+    }
   }
 };
 

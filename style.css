@@ -1344,3 +1344,22 @@ body{
 }
 .pmw-lbl-tag.privee{ background:rgba(108,146,179,.22); color:var(--slate-blue); }
 .pmw-lbl-tag.publique{ background:rgba(131,163,116,.22); color:var(--sage); }
+
+/* ---------- MODALE MON COMPTE ---------- */
+.pmw-acc-line{
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+  padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;
+}
+.pmw-acc-lbl{ color:var(--text-muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+.pmw-acc-val{ color:var(--text-primary); font-weight:600; word-break:break-all; text-align:right; }
+.pmw-acc-val.absente{ color:var(--warn); font-style:italic; font-weight:400; }
+
+.pmw-acc-sub{
+  font-family:'Fraunces',serif; font-size:15px; font-weight:600;
+  color:var(--text-primary); margin:20px 0 12px;
+}
+.pmw-acc-ok{
+  background:rgba(131,163,116,.14); border:1px solid rgba(131,163,116,.45);
+  color:var(--sage); font-size:12.5px; line-height:1.55;
+  border-radius:8px; padding:11px 13px; margin-bottom:14px;
+}

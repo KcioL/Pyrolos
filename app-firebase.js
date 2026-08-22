@@ -43,6 +43,7 @@ const stateEl  = $("pmw-account-state");
 const loginBtn = $("pmw-login-btn");
 const logoutBtn= $("pmw-logout-btn");
 const delAccountBtn = $("pmw-delete-account-btn");
+const accountBtn = $("pmw-account-btn");
 
 Auth.onChange(async user => {
   if (user) {
@@ -51,12 +52,14 @@ Auth.onChange(async user => {
     loginBtn.hidden = true;
     logoutBtn.hidden = false;
     delAccountBtn.hidden = false;
+    accountBtn.hidden = false;
   } else {
     stateEl.textContent = "Non connecté";
     stateEl.classList.remove("connected");
     loginBtn.hidden = false;
     logoutBtn.hidden = true;
     delAccountBtn.hidden = true;
+    accountBtn.hidden = true;
   }
   Ratings.clearCache();
 
@@ -345,6 +348,92 @@ lostModal.addEventListener("click", e => {
 
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !lostModal.hidden) lostModal.hidden = true;
+});
+
+/* ---------------- Mon compte : ajouter ou changer l'e-mail ---------------- */
+
+const accModal = $("pmw-acc-modal");
+const accNew   = $("pmw-acc-new");
+const accPass  = $("pmw-acc-pass");
+const accSave  = $("pmw-acc-save");
+const accError = $("pmw-acc-error");
+const accOk    = $("pmw-acc-ok");
+
+accountBtn.addEventListener("click", () => {
+  const user = Auth.current;
+  if (!user) return;
+
+  const reelle = Auth.realEmail();
+  $("pmw-acc-pseudo").textContent = displayNameOf(user);
+  $("pmw-acc-mail").textContent = reelle || "aucune";
+  $("pmw-acc-mail").classList.toggle("absente", !reelle);
+  $("pmw-acc-warn").hidden = !!reelle;
+  $("pmw-acc-formtitle").textContent = reelle
+    ? "Changer d'adresse"
+    : "Ajouter une adresse";
+
+  accNew.value = ""; accPass.value = "";
+  accError.hidden = true; accOk.hidden = true;
+  accSave.disabled = false;
+  accSave.textContent = "Enregistrer";
+  accModal.hidden = false;
+  setTimeout(() => accNew.focus(), 40);
+});
+
+accModal.addEventListener("click", e => {
+  if (e.target.hasAttribute("data-acc-close")) accModal.hidden = true;
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !accModal.hidden) accModal.hidden = true;
+});
+
+accSave.addEventListener("click", async () => {
+  accError.hidden = true; accOk.hidden = true;
+
+  if (!accNew.value.trim() || !accPass.value) {
+    accError.hidden = false;
+    accError.textContent = "Remplis la nouvelle adresse et ton mot de passe actuel.";
+    return;
+  }
+
+  accSave.disabled = true;
+  accSave.textContent = "Enregistrement…";
+  try {
+    const resultat = await Auth.changeEmail(accPass.value, accNew.value);
+    accPass.value = "";
+
+    accOk.hidden = false;
+    if (resultat === "verification") {
+      accOk.innerHTML =
+        "✓ Un lien de confirmation vient d'être envoyé à <strong>" +
+        accNew.value.trim() + "</strong>.<br>" +
+        "L'adresse ne sera active qu'une fois ce lien cliqué. " +
+        "Pense à vérifier tes indésirables.";
+    } else {
+      accOk.innerHTML =
+        "✓ Adresse enregistrée. Tu peux désormais te connecter avec elle, " +
+        "et récupérer ton mot de passe en cas d'oubli.";
+      $("pmw-acc-mail").textContent = accNew.value.trim();
+      $("pmw-acc-mail").classList.remove("absente");
+      $("pmw-acc-warn").hidden = true;
+    }
+    accSave.textContent = "Enregistrer";
+    accSave.disabled = false;
+  } catch (err) {
+    console.error(err);
+    accError.hidden = false;
+    accError.textContent =
+      err.code === "pyrolos/bad-email" ? err.message
+      : err.code === "auth/invalid-credential" || err.code === "auth/wrong-password"
+        ? "Mot de passe incorrect."
+      : err.code === "auth/email-already-in-use"
+        ? "Cette adresse est déjà utilisée par un autre compte."
+      : err.code === "auth/requires-recent-login"
+        ? "Reconnecte-toi puis réessaie."
+      : "Modification impossible. Réessaie.";
+    accSave.textContent = "Enregistrer";
+    accSave.disabled = false;
+  }
 });
 
 /* ---------------- Suppression de compte ---------------- */
