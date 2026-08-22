@@ -481,7 +481,8 @@ delConfirm.addEventListener("click", async () => {
     Stats.stopHeartbeat();
 
     const colIds = (window.pyrolosColIds && window.pyrolosColIds()) || [];
-    const { restant } = await Account.destroy(delPass.value, colIds);
+    const routeIds = (window.pyrolosRouteIds && window.pyrolosRouteIds()) || [];
+    const { restant } = await Account.destroy(delPass.value, colIds, routeIds);
 
     delModal.hidden = true;
     if (restant.length) {

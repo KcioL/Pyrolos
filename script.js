@@ -1968,6 +1968,12 @@ window.pyrolosRefreshRiders = loadRiders;
 
 /** Identifiants de tous les cols — sert au nettoyage des notes
     lors d'une suppression de compte. */
+/** Identifiants des itinéraires — sert au nettoyage des notes
+    lors d'une suppression de compte. */
+window.pyrolosRouteIds = function () {
+  return ROUTES.map(r => r.id).filter(Boolean);
+};
+
 window.pyrolosColIds = function () {
   return COLS.map(c => (window.PyrolosColId ? window.PyrolosColId(c) : null))
              .filter(Boolean);

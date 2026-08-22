@@ -1084,9 +1084,10 @@ export const Account = {
    * Supprime définitivement le compte et ses données.
    * @param {string} password mot de passe, pour la ré-authentification
    * @param {string[]} colIds identifiants des cols (pour retirer les notes)
+   * @param {string[]} routeIds identifiants des itinéraires (idem)
    * @returns {Promise<{restant: string[]}>} ce qui n'a pas pu être supprimé
    */
-  async destroy(password, colIds = []) {
+  async destroy(password, colIds = [], routeIds = []) {
     const user = Auth.current;
     if (!user) throw new Error("not-signed-in");
 
@@ -1119,6 +1120,12 @@ export const Account = {
     await essayer("notes", async () => {
       await Promise.all(colIds.map(id =>
         deleteDoc(doc(db, "cols", id, "ratings", uid)).catch(() => {})));
+    });
+
+    // 5 bis. notes laissées sur les itinéraires du site
+    await essayer("notes d'itinéraires", async () => {
+      await Promise.all((routeIds || []).map(id =>
+        deleteDoc(doc(db, "routes", id, "ratings", uid)).catch(() => {})));
     });
 
     // 6. marquer les conversations : les messages restent (ils appartiennent
