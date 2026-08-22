@@ -1360,3 +1360,15 @@ body{
   font-size:11px; line-height:1.55; color:var(--text-muted);
   border-left:2px solid var(--line); padding-left:11px; margin:16px 0 0;
 }
+
+/* avertissement « risque d'indésirables » avant tout envoi d'e-mail */
+.pmw-spam-tip{
+  background:rgba(108,146,179,.12); border:1px solid rgba(108,146,179,.4);
+  border-radius:8px; padding:11px 13px; margin-bottom:14px;
+  font-size:11.5px; line-height:1.6; color:var(--text-muted);
+}
+.pmw-spam-tip strong{ display:block; color:var(--slate-blue); margin-bottom:3px; }
+.pmw-spam-tip code{
+  background:var(--night-950); padding:1px 5px; border-radius:4px;
+  font-size:10.5px; color:var(--text-primary);
+}

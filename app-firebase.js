@@ -1,5 +1,5 @@
 // =============================================================
-//  Pyrolos — interface d'authentification et de notation
+//  Béarnout — interface d'authentification et de notation
 //  Fait le lien entre pyrolos-firebase.js et le DOM.
 // =============================================================
 
@@ -326,13 +326,14 @@ resetSend.addEventListener("click", async () => {
     // permettrait de découvrir qui est inscrit sur le site
     resetOk.innerHTML =
       "✓ Si un compte existe avec cette adresse, un lien vient d'être envoyé." +
-      "<br>Pense à vérifier tes indésirables.";
+      "<br><strong>Regarde dans tes indésirables</strong> s'il n'apparaît pas " +
+      "dans ta boîte de réception d'ici une minute.";
     resetSend.textContent = "Envoyer le lien";
   } catch (err) {
     console.error(err);
     resetError.hidden = false;
     resetError.textContent =
-      err.code === "pyrolos/legacy-account"
+      err.code === "béarnout/legacy-account"
         ? "Ce compte a été créé sans adresse e-mail : aucun lien ne peut être envoyé."
         : authErrorMessage(err);
     resetSend.textContent = "Envoyer le lien";
@@ -398,7 +399,8 @@ accSave.addEventListener("click", async () => {
         "✓ Un lien de confirmation vient d'être envoyé à <strong>" +
         accNew.value.trim() + "</strong>.<br>" +
         "L'adresse ne sera active qu'une fois ce lien cliqué. " +
-        "Pense à vérifier tes indésirables.";
+        "<strong>Regarde dans tes indésirables</strong> s'il n'arrive pas " +
+        "tout de suite.";
     } else {
       accOk.innerHTML =
         "✓ Adresse enregistrée. Tu peux désormais te connecter avec elle, " +
@@ -413,7 +415,7 @@ accSave.addEventListener("click", async () => {
     console.error(err);
     accError.hidden = false;
     accError.textContent =
-      err.code === "pyrolos/bad-email" ? err.message
+      err.code === "béarnout/bad-email" ? err.message
       : err.code === "auth/invalid-credential" || err.code === "auth/wrong-password"
         ? "Mot de passe incorrect."
       : err.code === "auth/email-already-in-use"
