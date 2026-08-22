@@ -394,12 +394,20 @@
       </div>
 
       <div class="pmw-field" id="pmw-email-field" hidden>
-        <label for="pmw-email">Adresse e-mail</label>
-        <input type="email" id="pmw-email" autocomplete="email" placeholder="toi@exemple.fr">
+        <label for="pmw-email">
+          Adresse e-mail <span class="pmw-optional-tag">facultatif</span>
+        </label>
+        <input type="email" id="pmw-email" autocomplete="email" placeholder="Laisse vide si tu préfères">
         <small class="pmw-hint">
-          Sert à te connecter et à récupérer ton mot de passe.
+          Sert uniquement à récupérer ton mot de passe en cas d'oubli.
           Jamais affichée sur le site : les autres ne voient que ton pseudo.
         </small>
+      </div>
+
+      <div class="pmw-warn" id="pmw-warn" hidden>
+        <strong>Sans e-mail, un mot de passe oublié = compte perdu.</strong>
+        Aucun lien de réinitialisation ne pourra t'être envoyé. Note-le dans
+        un endroit sûr — et tu te connecteras avec ton pseudo.
       </div>
 
       <div class="pmw-field">

@@ -117,19 +117,28 @@ export const Auth = {
   },
 
   /**
-   * Crée un compte : e-mail réel comme identifiant, pseudo comme nom
-   * affiché. L'e-mail sert UNIQUEMENT à se connecter et à récupérer son
-   * mot de passe ; il n'apparaît jamais sur le site.
+   * Crée un compte.
+   *   - avec e-mail  : c'est lui l'identifiant Firebase, la
+   *                    réinitialisation de mot de passe fonctionne ;
+   *   - sans e-mail  : on retombe sur l'adresse interne
+   *                    `pseudo@pyrolos.local`, et le mot de passe
+   *                    devient irrécupérable — l'utilisateur en est averti.
+   * Dans les deux cas, le pseudo est le nom affiché sur le site.
    */
   async register(pseudo, email, password) {
     const probleme = validatePseudo(pseudo);
     if (probleme) { const e = new Error(probleme); e.code = "pyrolos/bad-pseudo"; throw e; }
 
     const p = normalizePseudo(pseudo);
+    const mail = (email || "").trim();
+    const avecMail = mail.length > 0;
 
-    // Le pseudo n'est plus garanti unique par l'adresse interne : on le
-    // réserve explicitement. La création échoue si le document existe
-    // déjà, ce qui rend la réservation atomique.
+    if (avecMail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
+      const e = new Error("Adresse e-mail invalide."); e.code = "pyrolos/bad-email"; throw e;
+    }
+
+    // Réservation atomique du pseudo : la création échoue si le document
+    // existe déjà, même en cas d'inscriptions simultanées.
     try {
       await setDoc(doc(db, "pseudos", p), { reserve: true }, { merge: false });
     } catch {
@@ -139,31 +148,57 @@ export const Auth = {
 
     let cred;
     try {
-      cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      cred = await createUserWithEmailAndPassword(
+        auth, avecMail ? mail : pseudoToEmail(pseudo), password);
     } catch (err) {
-      // l'inscription a échoué : on libère le pseudo réservé
       try { await deleteDoc(doc(db, "pseudos", p)); } catch {}
       throw err;
     }
 
     await updateProfile(cred.user, { displayName: pseudo.trim() });
-    // on rattache le pseudo au compte créé
-    try { await setDoc(doc(db, "pseudos", p), { uid: cred.user.uid }, { merge: true }); } catch {}
+
+    // `hasEmail` sert à orienter l'utilisateur s'il tente de se connecter
+    // avec son pseudo alors que son identifiant est une adresse.
+    // On n'y stocke PAS l'adresse elle-même : ce document est public.
+    try {
+      await setDoc(doc(db, "pseudos", p),
+                   { uid: cred.user.uid, hasEmail: avecMail }, { merge: true });
+    } catch {}
 
     await cred.user.reload();
     return auth.currentUser;
   },
 
   /**
-   * Connexion. Accepte une adresse e-mail, ou un pseudo pour les comptes
-   * créés avant ce changement (leur identifiant interne était
-   * `pseudo@pyrolos.local`).
+   * Connexion par e-mail, ou par pseudo pour les comptes créés sans
+   * adresse. Si le pseudo correspond à un compte doté d'un e-mail, on
+   * le dit clairement plutôt que de renvoyer « identifiant incorrect ».
    */
   async login(identifiant, password) {
     const id = (identifiant || "").trim();
-    const email = id.includes("@") ? id : pseudoToEmail(id);
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    return cred.user;
+
+    if (id.includes("@")) {
+      const cred = await signInWithEmailAndPassword(auth, id, password);
+      return cred.user;
+    }
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, pseudoToEmail(id), password);
+      return cred.user;
+    } catch (err) {
+      // le pseudo existe-t-il, et est-il rattaché à une adresse ?
+      try {
+        const snap = await getDoc(doc(db, "pseudos", normalizePseudo(id)));
+        if (snap.exists() && snap.data().hasEmail) {
+          const e = new Error(
+            "Ce compte a été créé avec une adresse e-mail : connecte-toi avec elle.");
+          e.code = "pyrolos/use-email"; throw e;
+        }
+      } catch (e2) {
+        if (e2.code === "pyrolos/use-email") throw e2;
+      }
+      throw err;
+    }
   },
 
   async logout() {
@@ -185,6 +220,14 @@ export const Auth = {
       err.code = "pyrolos/legacy-account"; throw err;
     }
     await sendPasswordResetEmail(auth, e);
+  },
+
+  /** Ce pseudo correspond-il à un compte doté d'une vraie adresse ? */
+  async pseudoHasEmail(pseudo) {
+    try {
+      const snap = await getDoc(doc(db, "pseudos", normalizePseudo(pseudo)));
+      return snap.exists() && !!snap.data().hasEmail;
+    } catch { return false; }
   },
 
   /** Le compte utilise-t-il encore l'ancienne adresse interne ? */
@@ -210,6 +253,8 @@ export function authErrorMessage(err) {
   if (err?.code === "pyrolos/bad-pseudo") return err.message;
   if (err?.code === "pyrolos/pseudo-taken") return err.message;
   if (err?.code === "pyrolos/need-email") return err.message;
+  if (err?.code === "pyrolos/use-email") return err.message;
+  if (err?.code === "pyrolos/bad-email") return err.message;
   return map[err?.code] || "Une erreur est survenue. Réessaie.";
 }
 

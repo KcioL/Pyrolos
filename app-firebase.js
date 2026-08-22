@@ -22,7 +22,13 @@ const LOST_PASSWORD = {
     "puis reclique ici : Firebase t'enverra un lien pour choisir un " +
     "nouveau mot de passe.",
 
-  // compte créé avant l'ajout de l'e-mail : rien à faire
+  // le pseudo correspond à un compte doté d'une adresse
+  texteAvecMail:
+    "Ton compte est bien rattaché à une adresse e-mail. Saisis-la dans le " +
+    "champ « Identifiant » à la place de ton pseudo, puis reclique sur " +
+    "« Mot de passe oublié » : tu recevras un lien pour en choisir un nouveau.",
+
+  // compte créé sans adresse : rien à faire
   texteLegacy:
     "Ton compte a été créé sans adresse e-mail, donc aucun lien de " +
     "réinitialisation ne peut t'être envoyé. Je t'avais dit de noter " +
@@ -197,6 +203,14 @@ function applyMode() {
   passEl.autocomplete = signup ? "new-password" : "current-password";
 }
 
+/** L'avertissement ne s'affiche qu'à l'inscription, et seulement tant
+    qu'aucune adresse n'est saisie. */
+function majWarnMail() {
+  if (!warnEl) return;
+  const signup = mode === "signup";
+  warnEl.hidden = !signup || (emailEl && emailEl.value.trim().length > 0);
+}
+
 function showError(msg) {
   errorEl.hidden = !msg;
   errorEl.textContent = msg || "";
@@ -225,8 +239,8 @@ submitBtn.addEventListener("click", async () => {
     if (problem) return showError(problem);
 
     const mail = (emailEl ? emailEl.value : "").trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
-      return showError("Saisis une adresse e-mail valide : elle te permettra de récupérer ton mot de passe.");
+    if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
+      return showError("Adresse e-mail invalide. Laisse le champ vide si tu n'en veux pas.");
     }
 
     if (pass.length < 6) {
@@ -261,6 +275,7 @@ submitBtn.addEventListener("click", async () => {
 if (revealEl)  revealEl.addEventListener("click", () => setRevealed(!revealed));
 if (confirmEl) confirmEl.addEventListener("input", checkMatch);
 passEl.addEventListener("input", checkMatch);
+if (emailEl) emailEl.addEventListener("input", majWarnMail);
 
 [passEl, pseudoEl, confirmEl].filter(Boolean).forEach(el =>
   el.addEventListener("keydown", e => { if (e.key === "Enter") submitBtn.click(); })
@@ -271,13 +286,20 @@ passEl.addEventListener("input", checkMatch);
 forgotBtn.addEventListener("click", async () => {
   const saisi = pseudoEl.value.trim();
 
-  // Sans adresse saisie, ou avec un pseudo d'ancien compte, aucune
-  // réinitialisation n'est possible : on affiche le message dédié.
   if (!saisi.includes("@")) {
-    $("pmw-lost-title").textContent = LOST_PASSWORD.titre;
-    $("pmw-lost-text").innerHTML   = saisi
-      ? LOST_PASSWORD.texteLegacy
-      : LOST_PASSWORD.texteSansMail;
+    // Un pseudo a été saisi : le compte correspondant a-t-il un e-mail ?
+    // Si oui, la récupération est possible, il suffit de saisir l'adresse
+    // — inutile de lui annoncer que son compte est perdu.
+    let rattache = false;
+    if (saisi) {
+      try { rattache = await Auth.pseudoHasEmail(saisi); } catch {}
+    }
+    $("pmw-lost-title").textContent = rattache
+      ? "Presque !" : LOST_PASSWORD.titre;
+    $("pmw-lost-text").innerHTML =
+      rattache ? LOST_PASSWORD.texteAvecMail
+      : saisi  ? LOST_PASSWORD.texteLegacy
+               : LOST_PASSWORD.texteSansMail;
     lostModal.hidden = false;
     return;
   }
