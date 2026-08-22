@@ -13,29 +13,6 @@ const $ = id => document.getElementById(id);
    Modifie librement le texte ci-dessous — c'est le seul endroit à
    toucher si tu veux un ton plus doux ou plus salé.
    ============================================================= */
-const LOST_PASSWORD = {
-  titre: "T'es un énorme clown !!",
-
-  // aucune adresse saisie dans le champ identifiant
-  texteSansMail:
-    "Saisis d'abord ton adresse e-mail dans le champ « Identifiant », " +
-    "puis reclique ici : Firebase t'enverra un lien pour choisir un " +
-    "nouveau mot de passe.",
-
-  // le pseudo correspond à un compte doté d'une adresse
-  texteAvecMail:
-    "Ton compte est bien rattaché à une adresse e-mail. Saisis-la dans le " +
-    "champ « Identifiant » à la place de ton pseudo, puis reclique sur " +
-    "« Mot de passe oublié » : tu recevras un lien pour en choisir un nouveau.",
-
-  // compte créé sans adresse : rien à faire
-  texteLegacy:
-    "Ton compte a été créé sans adresse e-mail, donc aucun lien de " +
-    "réinitialisation ne peut t'être envoyé. Je t'avais dit de noter " +
-    "ton mot de passe quelque part. Tocard.<br><br>" +
-    "Plus qu'à recréer un compte — avec une adresse e-mail cette fois, " +
-    "pour ne plus jamais te retrouver ici."
-};
 
 /* ---------------- Barre de compte ---------------- */
 
@@ -131,7 +108,6 @@ const pseudoTag = $("pmw-pseudo-tag");
 const submitBtn= $("pmw-submit");
 const toggleBtn= $("pmw-toggle-mode");
 const forgotBtn= $("pmw-forgot");
-const lostModal= $("pmw-lost");
 
 if (!confirmField) {
   console.warn(
@@ -209,7 +185,7 @@ function applyMode() {
   // À la connexion, le champ accepte les deux : l'e-mail pour les comptes
   // récents, le pseudo pour ceux créés avant que l'e-mail existe. L'invite
   // doit le dire, sinon les anciens comptes se croient bloqués.
-  pseudoEl.placeholder = signup ? "loick" : "Ton e-mail (ou ton pseudo)";
+  pseudoEl.placeholder = signup ? "pseudo" : "Ton e-mail (ou ton pseudo)";
   if (forgotBtn)   forgotBtn.hidden   = signup;
   if (confirmField) confirmField.hidden = !signup;
   if (revealEl)    revealEl.hidden    = !signup;
@@ -299,55 +275,69 @@ if (emailEl) emailEl.addEventListener("input", majWarnMail);
 
 /* ---------------- Popup "mot de passe oublié" ---------------- */
 
-forgotBtn.addEventListener("click", async () => {
+forgotBtn.addEventListener("click", () => {
+  resetError.hidden = true;
+  resetOk.hidden = true;
+  // on pré-remplit si une adresse a déjà été saisie dans le formulaire
   const saisi = pseudoEl.value.trim();
+  resetMail.value = saisi.includes("@") ? saisi : "";
+  resetSend.disabled = false;
+  resetSend.textContent = "Envoyer le lien";
+  resetModal.hidden = false;
+  setTimeout(() => resetMail.focus(), 40);
+});
 
-  if (!saisi.includes("@")) {
-    // Un pseudo a été saisi : le compte correspondant a-t-il un e-mail ?
-    // Si oui, la récupération est possible, il suffit de saisir l'adresse
-    // — inutile de lui annoncer que son compte est perdu.
-    let rattache = false;
-    if (saisi) {
-      try { rattache = await Auth.pseudoHasEmail(saisi); } catch {}
-    }
-    $("pmw-lost-title").textContent = rattache
-      ? "Presque !" : LOST_PASSWORD.titre;
-    $("pmw-lost-text").innerHTML =
-      rattache ? LOST_PASSWORD.texteAvecMail
-      : saisi  ? LOST_PASSWORD.texteLegacy
-               : LOST_PASSWORD.texteSansMail;
-    lostModal.hidden = false;
+
+/* ---------------- Mot de passe oublié ---------------- */
+
+const resetModal = $("pmw-reset-modal");
+const resetMail  = $("pmw-reset-mail");
+const resetSend  = $("pmw-reset-send");
+const resetError = $("pmw-reset-error");
+const resetOk    = $("pmw-reset-ok");
+
+resetModal.addEventListener("click", e => {
+  if (e.target.hasAttribute("data-reset-close")) resetModal.hidden = true;
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !resetModal.hidden) resetModal.hidden = true;
+});
+resetMail.addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); resetSend.click(); }
+});
+
+resetSend.addEventListener("click", async () => {
+  const mail = resetMail.value.trim();
+  resetError.hidden = true;
+  resetOk.hidden = true;
+
+  if (!mail.includes("@")) {
+    resetError.hidden = false;
+    resetError.textContent = "Saisis une adresse e-mail valide.";
     return;
   }
 
-  forgotBtn.disabled = true;
-  forgotBtn.textContent = "Envoi…";
+  resetSend.disabled = true;
+  resetSend.textContent = "Envoi…";
   try {
-    await Auth.resetPassword(saisi);
-    showError(null);
-    subEl.textContent = "Si un compte existe avec cette adresse, un lien de "
-                      + "réinitialisation vient d'être envoyé. Pense à vérifier tes spams.";
+    await Auth.resetPassword(mail);
+    resetOk.hidden = false;
+    // formulation volontairement vague : confirmer qu'une adresse existe
+    // permettrait de découvrir qui est inscrit sur le site
+    resetOk.innerHTML =
+      "✓ Si un compte existe avec cette adresse, un lien vient d'être envoyé." +
+      "<br>Pense à vérifier tes indésirables.";
+    resetSend.textContent = "Envoyer le lien";
   } catch (err) {
-    if (err.code === "pyrolos/legacy-account") {
-      $("pmw-lost-title").textContent = LOST_PASSWORD.titre;
-      $("pmw-lost-text").innerHTML   = LOST_PASSWORD.texteLegacy;
-      lostModal.hidden = false;
-    } else {
-      console.error(err);
-      showError(authErrorMessage(err));
-    }
-  } finally {
-    forgotBtn.disabled = false;
-    forgotBtn.textContent = "Mot de passe oublié ?";
+    console.error(err);
+    resetError.hidden = false;
+    resetError.textContent =
+      err.code === "pyrolos/legacy-account"
+        ? "Ce compte a été créé sans adresse e-mail : aucun lien ne peut être envoyé."
+        : authErrorMessage(err);
+    resetSend.textContent = "Envoyer le lien";
+    resetSend.disabled = false;
   }
-});
-
-lostModal.addEventListener("click", e => {
-  if (e.target.hasAttribute("data-lost-close")) lostModal.hidden = true;
-});
-
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !lostModal.hidden) lostModal.hidden = true;
 });
 
 /* ---------------- Mon compte : ajouter ou changer l'e-mail ---------------- */

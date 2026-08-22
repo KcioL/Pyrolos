@@ -472,15 +472,6 @@ body{
 
 .pmw-warn strong{ display:block; margin-bottom:3px; color:var(--terracotta); }
 
-/* ---------- POPUP "MOT DE PASSE OUBLIÉ" ---------- */
-.pmw-lost-box{ text-align:center; }
-.pmw-lost-emoji{ font-size:42px; line-height:1; margin:4px 0 14px; }
-.pmw-lost-box .pmw-modal-title{ color:var(--terracotta); margin-bottom:12px; }
-.pmw-lost-text{
-  font-size:13.5px; line-height:1.6; color:var(--text-primary);
-  margin:0 0 22px;
-}
-
 /* précision sur la portée de la sauvegarde des succès */
 .pmw-section-note{
   margin:0; font-size:12px; line-height:1.5; color:var(--text-muted);
@@ -1362,4 +1353,10 @@ body{
   background:rgba(131,163,116,.14); border:1px solid rgba(131,163,116,.45);
   color:var(--sage); font-size:12.5px; line-height:1.55;
   border-radius:8px; padding:11px 13px; margin-bottom:14px;
+}
+
+/* note en pied de la fenêtre de réinitialisation */
+.pmw-reset-note{
+  font-size:11px; line-height:1.55; color:var(--text-muted);
+  border-left:2px solid var(--line); padding-left:11px; margin:16px 0 0;
 }

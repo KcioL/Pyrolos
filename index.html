@@ -398,9 +398,9 @@
           Compte créé avant l'ajout des e-mails ? Connecte-toi avec ton pseudo.
         </small>
         <small class="pmw-hint" id="pmw-pseudo-hint" hidden>
-          Le nom que verront les autres motards. Aucun rapport avec ton adresse :
-          tu peux t'appeler « loick » avec l'adresse « gardien64@… ».
-          3 à 20 caractères.
+          Le nom que verront les autres motards. Il est indépendant de ton
+          adresse e-mail. 3 à 20 caractères : lettres, chiffres, point,
+          tiret et underscore.
         </small>
       </div>
 
@@ -443,18 +443,6 @@
         <button class="pmw-link" id="pmw-toggle-mode">Pas encore de compte ? S'inscrire</button>
         <button class="pmw-link" id="pmw-forgot">Mot de passe oublié ?</button>
       </div>
-    </div>
-  </div>
-
-  <!-- ============ POPUP "MOT DE PASSE OUBLIÉ" ============ -->
-  <div class="pmw-modal" id="pmw-lost" hidden>
-    <div class="pmw-modal-backdrop" data-lost-close></div>
-    <div class="pmw-modal-box pmw-lost-box" role="alertdialog" aria-modal="true" aria-labelledby="pmw-lost-title">
-      <button class="pmw-modal-close" data-lost-close aria-label="Fermer">&times;</button>
-      <div class="pmw-lost-emoji" aria-hidden="true">🏍️💨</div>
-      <h2 class="pmw-modal-title" id="pmw-lost-title"></h2>
-      <p class="pmw-lost-text" id="pmw-lost-text"></p>
-      <button class="pmw-btn pmw-btn-primary pmw-btn-full" data-lost-close>C'est noté…</button>
     </div>
   </div>
 
@@ -605,7 +593,7 @@
 
       <div class="pmw-field">
         <label for="pmw-acc-new">Nouvelle adresse e-mail</label>
-        <input type="email" id="pmw-acc-new" autocomplete="email" placeholder="gardien64@exemple.fr">
+        <input type="email" id="pmw-acc-new" autocomplete="email" placeholder="nom@email.com">
       </div>
 
       <div class="pmw-field">
@@ -620,6 +608,38 @@
         <button class="pmw-btn-cancel" data-acc-close>Fermer</button>
         <button class="pmw-btn pmw-btn-primary" id="pmw-acc-save">Enregistrer</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ MODALE MOT DE PASSE OUBLIÉ ============ -->
+  <div class="pmw-modal" id="pmw-reset-modal" hidden>
+    <div class="pmw-modal-backdrop" data-reset-close></div>
+    <div class="pmw-modal-box" role="dialog" aria-modal="true" aria-labelledby="pmw-reset-title">
+      <button class="pmw-modal-close" data-reset-close aria-label="Fermer">&times;</button>
+      <h2 class="pmw-modal-title" id="pmw-reset-title">Mot de passe oublié</h2>
+      <p class="pmw-modal-sub">
+        Saisis l'adresse e-mail de ton compte : Firebase t'enverra un lien
+        pour choisir un nouveau mot de passe.
+      </p>
+
+      <div class="pmw-field">
+        <label for="pmw-reset-mail">Adresse e-mail</label>
+        <input type="email" id="pmw-reset-mail" autocomplete="email" placeholder="nom@email.com">
+      </div>
+
+      <div class="pmw-modal-error" id="pmw-reset-error" hidden></div>
+      <div class="pmw-acc-ok" id="pmw-reset-ok" hidden></div>
+
+      <div class="pmw-modal-actions">
+        <button class="pmw-btn-cancel" data-reset-close>Annuler</button>
+        <button class="pmw-btn pmw-btn-primary" id="pmw-reset-send">Envoyer le lien</button>
+      </div>
+
+      <p class="pmw-reset-note">
+        Compte créé sans adresse e-mail ? Aucun lien ne peut t'être envoyé.
+        Connecte-toi avec ton pseudo, puis ajoute une adresse depuis
+        « Mon compte » pour ne plus jamais te retrouver bloqué.
+      </p>
     </div>
   </div>
 
