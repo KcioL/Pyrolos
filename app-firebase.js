@@ -15,9 +15,20 @@ const $ = id => document.getElementById(id);
    ============================================================= */
 const LOST_PASSWORD = {
   titre: "T'es un énorme clown !!",
-  texte: "Je t'avais dit d'enregistrer ton mot de passe quelque part. " +
-         "Maintenant ton compte est perdu. Tocard.<br><br>" +
-         "Plus qu'à recréer un compte avec un autre pseudo… et à le noter, cette fois."
+
+  // aucune adresse saisie dans le champ identifiant
+  texteSansMail:
+    "Saisis d'abord ton adresse e-mail dans le champ « Identifiant », " +
+    "puis reclique ici : Firebase t'enverra un lien pour choisir un " +
+    "nouveau mot de passe.",
+
+  // compte créé avant l'ajout de l'e-mail : rien à faire
+  texteLegacy:
+    "Ton compte a été créé sans adresse e-mail, donc aucun lien de " +
+    "réinitialisation ne peut t'être envoyé. Je t'avais dit de noter " +
+    "ton mot de passe quelque part. Tocard.<br><br>" +
+    "Plus qu'à recréer un compte — avec une adresse e-mail cette fois, " +
+    "pour ne plus jamais te retrouver ici."
 };
 
 /* ---------------- Barre de compte ---------------- */
@@ -103,7 +114,6 @@ const matchEl  = $("pmw-match");
 const revealEl = $("pmw-reveal");
 const pseudoEl = $("pmw-pseudo");
 const hintEl   = $("pmw-pseudo-hint");
-const warnEl   = $("pmw-warn");
 const submitBtn= $("pmw-submit");
 const toggleBtn= $("pmw-toggle-mode");
 const forgotBtn= $("pmw-forgot");
@@ -178,7 +188,6 @@ function applyMode() {
   // l'index.html n'a pas encore été mis à jour (sinon une seule balise
   // manquante ferait planter toute l'ouverture de la fenêtre).
   if (hintEl)      hintEl.hidden      = !signup;
-  if (warnEl)      warnEl.hidden      = !signup;
   if (forgotBtn)   forgotBtn.hidden   = signup;
   if (confirmField) confirmField.hidden = !signup;
   if (revealEl)    revealEl.hidden    = !signup;
@@ -214,6 +223,11 @@ submitBtn.addEventListener("click", async () => {
   if (mode === "signup") {
     const problem = validatePseudo(pseudo);
     if (problem) return showError(problem);
+
+    const mail = (emailEl ? emailEl.value : "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
+      return showError("Saisis une adresse e-mail valide : elle te permettra de récupérer ton mot de passe.");
+    }
 
     if (pass.length < 6) {
       return showError("Le mot de passe doit faire au moins 6 caractères.");
@@ -254,10 +268,40 @@ passEl.addEventListener("input", checkMatch);
 
 /* ---------------- Popup "mot de passe oublié" ---------------- */
 
-forgotBtn.addEventListener("click", () => {
-  $("pmw-lost-title").textContent = LOST_PASSWORD.titre;
-  $("pmw-lost-text").innerHTML   = LOST_PASSWORD.texte;
-  lostModal.hidden = false;
+forgotBtn.addEventListener("click", async () => {
+  const saisi = pseudoEl.value.trim();
+
+  // Sans adresse saisie, ou avec un pseudo d'ancien compte, aucune
+  // réinitialisation n'est possible : on affiche le message dédié.
+  if (!saisi.includes("@")) {
+    $("pmw-lost-title").textContent = LOST_PASSWORD.titre;
+    $("pmw-lost-text").innerHTML   = saisi
+      ? LOST_PASSWORD.texteLegacy
+      : LOST_PASSWORD.texteSansMail;
+    lostModal.hidden = false;
+    return;
+  }
+
+  forgotBtn.disabled = true;
+  forgotBtn.textContent = "Envoi…";
+  try {
+    await Auth.resetPassword(saisi);
+    showError(null);
+    subEl.textContent = "Si un compte existe avec cette adresse, un lien de "
+                      + "réinitialisation vient d'être envoyé. Pense à vérifier tes spams.";
+  } catch (err) {
+    if (err.code === "pyrolos/legacy-account") {
+      $("pmw-lost-title").textContent = LOST_PASSWORD.titre;
+      $("pmw-lost-text").innerHTML   = LOST_PASSWORD.texteLegacy;
+      lostModal.hidden = false;
+    } else {
+      console.error(err);
+      showError(authErrorMessage(err));
+    }
+  } finally {
+    forgotBtn.disabled = false;
+    forgotBtn.textContent = "Mot de passe oublié ?";
+  }
 });
 
 lostModal.addEventListener("click", e => {

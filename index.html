@@ -388,9 +388,18 @@
       <p class="pmw-modal-sub" id="pmw-modal-sub">Connecte-toi avec ton pseudo pour noter les cols.</p>
 
       <div class="pmw-field">
-        <label for="pmw-pseudo">Pseudo</label>
-        <input type="text" id="pmw-pseudo" autocomplete="username" placeholder="Ton pseudo de motard">
+        <label for="pmw-pseudo" id="pmw-pseudo-lbl">Identifiant</label>
+        <input type="text" id="pmw-pseudo" autocomplete="username" placeholder="Ton e-mail ou ton pseudo">
         <small class="pmw-hint" id="pmw-pseudo-hint" hidden>3 à 20 caractères : lettres, chiffres, . _ -</small>
+      </div>
+
+      <div class="pmw-field" id="pmw-email-field" hidden>
+        <label for="pmw-email">Adresse e-mail</label>
+        <input type="email" id="pmw-email" autocomplete="email" placeholder="toi@exemple.fr">
+        <small class="pmw-hint">
+          Sert à te connecter et à récupérer ton mot de passe.
+          Jamais affichée sur le site : les autres ne voient que ton pseudo.
+        </small>
       </div>
 
       <div class="pmw-field">
@@ -405,12 +414,7 @@
         <small class="pmw-match" id="pmw-match" hidden></small>
       </div>
 
-      <div class="pmw-warn" id="pmw-warn" hidden>
-        <strong>Note bien ton mot de passe quelque part.</strong>
-        Aucune adresse e-mail n'est demandée, donc aucun lien de
-        réinitialisation ne peut t'être envoyé : un mot de passe oublié
-        signifie un compte définitivement perdu.
-      </div>
+
 
       <div class="pmw-modal-error" id="pmw-modal-error" hidden></div>
 

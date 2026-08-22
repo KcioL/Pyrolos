@@ -6,7 +6,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged, updateProfile,
+  signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
   deleteUser, reauthenticateWithCredential, EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
@@ -116,61 +116,100 @@ export const Auth = {
     });
   },
 
-  /** Crée un compte à partir d'un pseudo unique et d'un mot de passe. */
-  async register(pseudo, password) {
-    const problem = validatePseudo(pseudo);
-    if (problem) { const e = new Error(problem); e.code = "pyrolos/bad-pseudo"; throw e; }
+  /**
+   * Crée un compte : e-mail réel comme identifiant, pseudo comme nom
+   * affiché. L'e-mail sert UNIQUEMENT à se connecter et à récupérer son
+   * mot de passe ; il n'apparaît jamais sur le site.
+   */
+  async register(pseudo, email, password) {
+    const probleme = validatePseudo(pseudo);
+    if (probleme) { const e = new Error(probleme); e.code = "pyrolos/bad-pseudo"; throw e; }
 
-    const cred = await createUserWithEmailAndPassword(
-      auth, pseudoToEmail(pseudo), password
-    );
-    // on conserve la casse choisie par l'utilisateur pour l'affichage
-    await updateProfile(cred.user, { displayName: pseudo.trim() });
+    const p = normalizePseudo(pseudo);
 
-    // un document minuscule par compte : permet de compter les inscrits
-    // sans exposer l'API d'authentification, et sans compteur falsifiable
+    // Le pseudo n'est plus garanti unique par l'adresse interne : on le
+    // réserve explicitement. La création échoue si le document existe
+    // déjà, ce qui rend la réservation atomique.
     try {
-      await setDoc(doc(db, "accounts", cred.user.uid), {
-        createdAt: serverTimestamp()
-      }, { merge: true });
-    } catch (err) {
-      console.warn("Enregistrement du compte dans les statistiques :", err);
+      await setDoc(doc(db, "pseudos", p), { reserve: true }, { merge: false });
+    } catch {
+      const e = new Error("Ce pseudo est déjà pris.");
+      e.code = "pyrolos/pseudo-taken"; throw e;
     }
 
-    // onAuthStateChanged s'est déclenché AVANT updateProfile : à ce
-    // moment-là displayName était encore vide. On recharge le profil
-    // pour que l'interface affiche le pseudo dès la première connexion.
+    let cred;
+    try {
+      cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    } catch (err) {
+      // l'inscription a échoué : on libère le pseudo réservé
+      try { await deleteDoc(doc(db, "pseudos", p)); } catch {}
+      throw err;
+    }
+
+    await updateProfile(cred.user, { displayName: pseudo.trim() });
+    // on rattache le pseudo au compte créé
+    try { await setDoc(doc(db, "pseudos", p), { uid: cred.user.uid }, { merge: true }); } catch {}
+
     await cred.user.reload();
     return auth.currentUser;
   },
 
-  async login(pseudo, password) {
-    const cred = await signInWithEmailAndPassword(
-      auth, pseudoToEmail(pseudo), password
-    );
+  /**
+   * Connexion. Accepte une adresse e-mail, ou un pseudo pour les comptes
+   * créés avant ce changement (leur identifiant interne était
+   * `pseudo@pyrolos.local`).
+   */
+  async login(identifiant, password) {
+    const id = (identifiant || "").trim();
+    const email = id.includes("@") ? id : pseudoToEmail(id);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
     return cred.user;
   },
 
   async logout() {
     await signOut(auth);
+  },
+
+  /**
+   * Envoie le lien de réinitialisation. C'est Firebase qui expédie le
+   * message depuis ses propres serveurs : le site n'envoie rien.
+   */
+  async resetPassword(email) {
+    const e = (email || "").trim();
+    if (!e.includes("@")) {
+      const err = new Error("Saisis ton adresse e-mail.");
+      err.code = "pyrolos/need-email"; throw err;
+    }
+    if (e.endsWith("@" + PSEUDO_DOMAIN)) {
+      const err = new Error("legacy");
+      err.code = "pyrolos/legacy-account"; throw err;
+    }
+    await sendPasswordResetEmail(auth, e);
+  },
+
+  /** Le compte utilise-t-il encore l'ancienne adresse interne ? */
+  isLegacy() {
+    return !!Auth.current?.email?.endsWith("@" + PSEUDO_DOMAIN);
   }
 };
 
 /** Messages d'erreur Firebase traduits en français lisible. */
 export function authErrorMessage(err) {
   const map = {
-    "auth/invalid-email":          "Pseudo invalide.",
+    "auth/invalid-email":          "Adresse e-mail invalide.",
     "auth/missing-password":       "Mot de passe manquant.",
     "auth/weak-password":          "Mot de passe trop court (6 caractères minimum).",
-    "auth/email-already-in-use":   "Ce pseudo est déjà pris. Essaie-en un autre.",
-    "auth/invalid-credential":     "Pseudo ou mot de passe incorrect.",
-    "auth/wrong-password":         "Pseudo ou mot de passe incorrect.",
-    "auth/user-not-found":         "Pseudo ou mot de passe incorrect.",
+    "auth/email-already-in-use":   "Un compte existe déjà avec cette adresse e-mail.",
+    "auth/invalid-credential":     "Identifiant ou mot de passe incorrect.",
+    "auth/wrong-password":         "Identifiant ou mot de passe incorrect.",
+    "auth/user-not-found":         "Identifiant ou mot de passe incorrect.",
     "auth/too-many-requests":      "Trop de tentatives. Réessaie dans quelques minutes.",
     "auth/network-request-failed": "Problème de connexion réseau.",
     "auth/operation-not-allowed":  "La méthode E-mail/Mot de passe n'est pas activée dans la console Firebase."
   };
   if (err?.code === "pyrolos/bad-pseudo") return err.message;
+  if (err?.code === "pyrolos/pseudo-taken") return err.message;
+  if (err?.code === "pyrolos/need-email") return err.message;
   return map[err?.code] || "Une erreur est survenue. Réessaie.";
 }
 
