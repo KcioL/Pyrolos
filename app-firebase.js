@@ -1,5 +1,5 @@
 // =============================================================
-//  Béarnout — interface d'authentification et de notation
+//  Pyrolos — interface d'authentification et de notation
 //  Fait le lien entre pyrolos-firebase.js et le DOM.
 // =============================================================
 
@@ -333,7 +333,7 @@ resetSend.addEventListener("click", async () => {
     console.error(err);
     resetError.hidden = false;
     resetError.textContent =
-      err.code === "béarnout/legacy-account"
+      err.code === "pyrolos/legacy-account"
         ? "Ce compte a été créé sans adresse e-mail : aucun lien ne peut être envoyé."
         : authErrorMessage(err);
     resetSend.textContent = "Envoyer le lien";
@@ -415,7 +415,7 @@ accSave.addEventListener("click", async () => {
     console.error(err);
     accError.hidden = false;
     accError.textContent =
-      err.code === "béarnout/bad-email" ? err.message
+      err.code === "pyrolos/bad-email" ? err.message
       : err.code === "auth/invalid-credential" || err.code === "auth/wrong-password"
         ? "Mot de passe incorrect."
       : err.code === "auth/email-already-in-use"
