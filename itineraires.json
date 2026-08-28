@@ -108,6 +108,6 @@
     "gpx": "gpx/soulor-aubisque-depuis-jurancon.gpx",
     "id": "soulor-aubisque-depuis-jurancon",
     "km": 119,
-    "dev": true
+    "dev": false
   }
 ]
