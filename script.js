@@ -2530,6 +2530,8 @@ function initTabs() {
       Object.entries(views).forEach(([key, el]) => {
         el.hidden = key !== tab.dataset.view;
       });
+      // Comptage des visites par onglet (voir suivi.js)
+      if (window.suivi) window.suivi.page(tab.dataset.view);
       if (tab.dataset.view === "carte" && map) {
         setTimeout(() => map.invalidateSize(), 50);
       }

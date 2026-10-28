@@ -90,3 +90,25 @@ visible, active App Check et la protection contre les abus d'authentification.
 des fiches : les valeurs que j'avais inventées sont remplacées par les vraies
 notes des utilisateurs. Le classement, lui, s'appuie encore dessus — à faire
 évoluer si tu veux qu'il reflète les votes.
+
+## Statistiques de visite (tableau de bord)
+
+`suivi.js` compte les visites pour le tableau de bord (un site à part). Il est chargé en bas de
+`index.html` avec le nom de site `pyrolos`, et `script.js` lui signale chaque changement d'onglet
+(carte, itinéraires, météo…), pour savoir quels onglets sont les plus ouverts.
+
+Il n'envoie rien de personnel : seulement des compteurs (visiteurs uniques par jour et par mois,
+pages vues, nouveaux visiteurs, téléphone ou ordinateur), rangés dans la **Realtime Database** du
+projet (pas dans Firestore), sous `stats/pyrolos/`. Firestore et ses règles ne changent pas.
+
+À faire une fois dans la console Firebase (projet `pyrolos`) :
+
+1. **Realtime Database** → **Créer une base de données** → emplacement **Belgique (europe-west1)**
+   → **Démarrer en mode verrouillé**.
+2. Vérifier son adresse en haut de l'onglet **Données** :
+   `https://pyrolos-default-rtdb.europe-west1.firebasedatabase.app`. Si elle est différente, la
+   reporter dans `data-base` en bas de `index.html` et dans `config.js` du tableau de bord.
+3. Onglet **Règles** : coller le contenu de `database.rules.json`, puis **Publier**.
+
+Pour ne pas compter ses propres visites : ouvrir le site une fois avec `?suivi=off` à la fin de
+l'adresse, sur chaque appareil (`?suivi=on` pour annuler).
