@@ -397,6 +397,7 @@ export const Ratings = {
       value,
       updatedAt: serverTimestamp()
     });
+    window.suivi?.action("note-col", "carte"); // tableau de bord (voir suivi.js)
     cache.delete(id);
     return this.get(id, { force: true });
   },
@@ -558,6 +559,7 @@ export const RouteRatings = {
     await setDoc(doc(db, "routes", id, "ratings", user.uid), {
       value, updatedAt: serverTimestamp()
     });
+    window.suivi?.action("note-itineraire", "itineraires"); // tableau de bord
     routeCache.delete(id);
     return this.get(id, { force: true });
   },
@@ -689,6 +691,7 @@ export const Trips = {
     };
 
     const ref = await addDoc(collection(db, "users", user.uid, "trips"), payload);
+    window.suivi?.action("itineraire-cree"); // tableau de bord
     return ref.id;
   },
 
@@ -785,6 +788,7 @@ export const Riders = {
       cols: Number(data.cols) || 0,
       updatedAt: serverTimestamp()
     });
+    window.suivi?.action("profil-rider", "riders"); // tableau de bord
   },
 
   async remove() {
@@ -871,6 +875,7 @@ export const Messages = {
       text: body,
       createdAt: serverTimestamp()
     });
+    window.suivi?.action("message-envoye", "messages"); // tableau de bord (rien du message n'est envoyé)
 
     // setDoc + merge plutôt qu'updateDoc : ce dernier échoue si le
     // document n'existe pas encore, ce qui perdrait le message qui vient

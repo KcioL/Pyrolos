@@ -259,6 +259,8 @@ function render() {
 function openDetail(i) {
   selectedIndex = i;
   const c = COLS[i];
+  // Tableau de bord : les cols les plus consultés (voir suivi.js)
+  if (c && window.suivi) window.suivi.contenu("col", c.nom, c.nom);
   const ridden = getRidden().has(c.nom);
 
   detailEl.classList.add("open");
@@ -651,10 +653,19 @@ function renderRoutes() {
   devHost.innerHTML = dev.map(routeCard).join("");
   host.innerHTML = autres.map(routeCard).join("");
 
+  // Tableau de bord : les itinéraires les plus ouverts
+  document.querySelectorAll(".pmw-route-wrap[data-route] .pmw-route").forEach(a =>
+    a.addEventListener("click", () => {
+      const w = a.closest("[data-route]");
+      const nom = a.querySelector("h3")?.textContent || w.dataset.route;
+      window.suivi?.contenu("itineraire", w.dataset.route, nom);
+    }));
+
   // téléchargement GPX sans suivre le lien de la carte
   document.querySelectorAll("[data-gpx]").forEach(el =>
     el.addEventListener("click", e => {
       e.preventDefault(); e.stopPropagation();
+      window.suivi?.action("telechargement-gpx", "itineraires"); // tableau de bord
       const a = document.createElement("a");
       a.href = el.dataset.gpx; a.download = ""; a.click();
     }));
